@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuildPC Checker - Authentication</title>
+    <meta name="description" content="Đăng nhập hoặc đăng ký tài khoản BuildPC Checker để quản lý cấu hình PC của bạn">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Background Animation -->
+    <div class="background-animation">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container" id="main-container">
+        <!-- Auth Section -->
+        <section class="auth-section" id="auth-section">
+            <div class="auth-card">
+                <!-- Logo & Title -->
+                <div class="auth-header">
+                    <div class="logo">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="48" height="48" rx="12" fill="url(#logo-gradient)" />
+                            <path d="M24 12L32 18V30L24 36L16 30V18L24 12Z" stroke="white" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M24 24L32 18M24 24L16 18M24 24V36" stroke="white" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                            <defs>
+                                <linearGradient id="logo-gradient" x1="0" y1="0" x2="48" y2="48"
+                                    gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#667eea" />
+                                    <stop offset="1" stop-color="#764ba2" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <h1 class="auth-title">BuildPC Checker</h1>
+                    <p class="auth-subtitle">Quản lý cấu hình PC của bạn</p>
+                </div>
+
+                <!-- Tab Switcher -->
+                <div class="tab-switcher">
+                    <button class="tab-btn active" id="login-tab" data-tab="login">
+                        Đăng nhập
+                    </button>
+                    <button class="tab-btn" id="register-tab" data-tab="register">
+                        Đăng ký
+                    </button>
+                    <div class="tab-indicator"></div>
+                </div>
+
+                <!-- Login Form -->
+                <form class="auth-form active" id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M3.33333 5.83333L10 10.8333L16.6667 5.83333M3.33333 14.1667H16.6667C17.5871 14.1667 18.3333 13.4205 18.3333 12.5V5.83333C18.3333 4.91286 17.5871 4.16667 16.6667 4.16667H3.33333C2.41286 4.16667 1.66667 4.91286 1.66667 5.83333V12.5C1.66667 13.4205 2.41286 14.1667 3.33333 14.1667Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <input type="email" id="login-email" placeholder="your@email.com" required>
+                        </div>
+                        <span class="error-message" id="login-email-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password">Mật khẩu</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M5.83333 9.16667V5.83333C5.83333 3.53215 7.69881 1.66667 10 1.66667C12.3012 1.66667 14.1667 3.53215 14.1667 5.83333V9.16667M10 12.5V14.1667M6.66667 18.3333H13.3333C14.2538 18.3333 15 17.5871 15 16.6667V10.8333C15 9.91286 14.2538 9.16667 13.3333 9.16667H6.66667C5.74619 9.16667 5 9.91286 5 10.8333V16.6667C5 17.5871 5.74619 18.3333 6.66667 18.3333Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <input type="password" id="login-password" placeholder="••••••••" required>
+                        </div>
+                        <span class="error-message" id="login-password-error"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="login-btn">
+                        <span class="btn-text">Đăng nhập</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </form>
+
+                <!-- Register Form -->
+                <form class="auth-form" id="register-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="register-firstname">Họ</label>
+                            <input type="text" id="register-firstname" placeholder="Nguyễn" required>
+                            <span class="error-message" id="register-firstname-error"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="register-lastname">Tên</label>
+                            <input type="text" id="register-lastname" placeholder="Văn A" required>
+                            <span class="error-message" id="register-lastname-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-username">Tên người dùng</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M10 10C12.0711 10 13.75 8.32107 13.75 6.25C13.75 4.17893 12.0711 2.5 10 2.5C7.92893 2.5 6.25 4.17893 6.25 6.25C6.25 8.32107 7.92893 10 10 10ZM10 10C6.54822 10 3.75 12.7982 3.75 16.25V17.5M10 10C13.4518 10 16.25 12.7982 16.25 16.25V17.5"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <input type="text" id="register-username" placeholder="username123" required>
+                        </div>
+                        <span class="error-message" id="register-username-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M3.33333 5.83333L10 10.8333L16.6667 5.83333M3.33333 14.1667H16.6667C17.5871 14.1667 18.3333 13.4205 18.3333 12.5V5.83333C18.3333 4.91286 17.5871 4.16667 16.6667 4.16667H3.33333C2.41286 4.16667 1.66667 4.91286 1.66667 5.83333V12.5C1.66667 13.4205 2.41286 14.1667 3.33333 14.1667Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <input type="email" id="register-email" placeholder="your@email.com" required>
+                        </div>
+                        <span class="error-message" id="register-email-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-password">Mật khẩu</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M5.83333 9.16667V5.83333C5.83333 3.53215 7.69881 1.66667 10 1.66667C12.3012 1.66667 14.1667 3.53215 14.1667 5.83333V9.16667M10 12.5V14.1667M6.66667 18.3333H13.3333C14.2538 18.3333 15 17.5871 15 16.6667V10.8333C15 9.91286 14.2538 9.16667 13.3333 9.16667H6.66667C5.74619 9.16667 5 9.91286 5 10.8333V16.6667C5 17.5871 5.74619 18.3333 6.66667 18.3333Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <input type="password" id="register-password" placeholder="Tối thiểu 8 ký tự" required>
+                        </div>
+                        <span class="error-message" id="register-password-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-dob">Ngày sinh</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M6.66667 1.66667V5M13.3333 1.66667V5M2.5 8.33333H17.5M4.16667 3.33333H15.8333C16.7538 3.33333 17.5 4.07953 17.5 5V16.6667C17.5 17.5871 16.7538 18.3333 15.8333 18.3333H4.16667C3.24619 18.3333 2.5 17.5871 2.5 16.6667V5C2.5 4.07953 3.24619 3.33333 4.16667 3.33333Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <input type="date" id="register-dob" required>
+                        </div>
+                        <span class="error-message" id="register-dob-error"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="register-btn">
+                        <span class="btn-text">Đăng ký</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- My Info Section -->
+        <section class="info-section" id="info-section">
+            <div class="info-card">
+                <!-- Header -->
+                <div class="info-header">
+                    <div class="info-header-content">
+                        <div class="avatar" id="user-avatar">
+                            <span id="avatar-initials"></span>
+                        </div>
+                        <div class="info-header-text">
+                            <h2 id="user-fullname">Loading...</h2>
+                            <p id="user-username">@username</p>
+                        </div>
+                    </div>
+                    <div class="info-header-actions">
+                        <button class="btn btn-secondary" id="edit-profile-btn">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M14.1667 2.49993C14.3856 2.28106 14.6454 2.10744 14.9314 1.98899C15.2173 1.87054 15.5238 1.80957 15.8334 1.80957C16.1429 1.80957 16.4494 1.87054 16.7353 1.98899C17.0213 2.10744 17.2811 2.28106 17.5 2.49993C17.7189 2.7188 17.8925 2.97863 18.011 3.2646C18.1294 3.55057 18.1904 3.85706 18.1904 4.16659C18.1904 4.47612 18.1294 4.78262 18.011 5.06859C17.8925 5.35455 17.7189 5.61439 17.5 5.83326L6.25002 17.0833L1.66669 18.3333L2.91669 13.7499L14.1667 2.49993Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Chỉnh sửa
+                        </button>
+                        <button class="btn btn-secondary" id="change-password-btn">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M13.3333 9.16667V5.83333C13.3333 3.99238 11.841 2.5 10 2.5C8.15905 2.5 6.66667 3.99238 6.66667 5.83333V9.16667M10 12.5V14.1667M5.83333 17.5H14.1667C15.0871 17.5 15.8333 16.7538 15.8333 15.8333V10.8333C15.8333 9.91286 15.0871 9.16667 14.1667 9.16667H5.83333C4.91286 9.16667 4.16667 9.91286 4.16667 10.8333V15.8333C4.16667 16.7538 4.91286 17.5 5.83333 17.5Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Đổi mật khẩu
+                        </button>
+                        <button class="btn btn-admin" id="admin-panel-btn" style="display: none;">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M10 5.83333V10M10 14.1667H10.0083M18.3333 10C18.3333 14.6024 14.6024 18.3333 10 18.3333C5.39763 18.3333 1.66667 14.6024 1.66667 10C1.66667 5.39763 5.39763 1.66667 10 1.66667C14.6024 1.66667 18.3333 5.39763 18.3333 10Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Admin Panel
+                        </button>
+                        <button class="btn btn-secondary" id="logout-btn">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M7.5 17.5H4.16667C3.24619 17.5 2.5 16.7538 2.5 15.8333V4.16667C2.5 3.24619 3.24619 2.5 4.16667 2.5H7.5M13.3333 14.1667L17.5 10M17.5 10L13.3333 5.83333M17.5 10H7.5"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Đăng xuất
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-item-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M3 8L10.89 13.26C11.5417 13.6728 12.4583 13.6728 13.11 13.26L21 8M5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V17C3 18.1046 3.89543 19 5 19Z"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="info-item-content">
+                            <span class="info-item-label">Email</span>
+                            <span class="info-item-value" id="user-email">loading@example.com</span>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-item-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M8 7V3M16 7V3M7 11H17M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="info-item-content">
+                            <span class="info-item-label">Ngày sinh</span>
+                            <span class="info-item-value" id="user-dob">01/01/2000</span>
+                        </div>
+                    </div>
+
+                    <div class="info-item full-width">
+                        <div class="info-item-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M9 12L11 14L15 10M20.618 5.984C21.4143 7.55639 21.8356 9.28867 21.85 11.046C21.8643 12.8033 21.4713 14.5422 20.6986 16.1269C19.9259 17.7116 18.7935 19.0999 17.3885 20.1862C15.9835 21.2725 14.3446 22.0275 12.6007 22.3932C10.8568 22.7588 9.05394 22.7256 7.32524 22.2961C5.59654 21.8666 3.98789 21.0523 2.62412 19.9163C1.26035 18.7803 0.179313 17.3523 -0.562687 15.7407C-1.30469 14.1291 -1.75 12.3737 -1.75 10.5938C-1.75 8.81384 -1.30469 7.05847 -0.562687 5.44687"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="info-item-content">
+                            <span class="info-item-label">Vai trò</span>
+                            <div class="roles-container" id="user-roles">
+                                <span class="role-badge">USER</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">0</span>
+                            <span class="stat-label">Cấu hình đã lưu</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 4M12 12H15M12 16H15M9 12H9.01M9 16H9.01"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">0</span>
+                            <span class="stat-label">Kiểm tra tương thích</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Profile Button (visible for all users) -->
+                <div class="action-section">
+                    <button class="btn btn-outline" id="edit-my-info-btn">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path
+                                d="M14.1667 2.49993C14.3856 2.28106 14.6454 2.10744 14.9314 1.98899C15.2173 1.87054 15.5238 1.80957 15.8334 1.80957C16.1429 1.80957 16.4494 1.87054 16.7353 1.98899C17.0213 2.10744 17.2811 2.28106 17.5 2.49993C17.7189 2.7188 17.8925 2.97863 18.011 3.2646C18.1294 3.55057 18.1904 3.85706 18.1904 4.16659C18.1904 4.47612 18.1294 4.78262 18.011 5.06859C17.8925 5.35455 17.7189 5.61439 17.5 5.83326L6.25002 17.0833L1.66669 18.3333L2.91669 13.7499L14.1667 2.49993Z"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        Cập nhật thông tin của tôi
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Panel Section -->
+        <section class="admin-section" id="admin-section">
+            <div class="admin-card">
+                <!-- Admin Header -->
+                <div class="admin-header">
+                    <div>
+                        <h2>Admin Panel</h2>
+                        <p>Quản lý hệ thống</p>
+                    </div>
+                    <button class="btn btn-secondary" id="back-to-profile-btn">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M15.8333 10H4.16667M4.16667 10L10 15.8333M4.16667 10L10 4.16667"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        Quay lại
+                    </button>
+                </div>
+
+                <!-- Admin Tabs (Only for super admin) -->
+                <div class="admin-tabs" id="admin-tabs" style="display: none;">
+                    <button class="admin-tab active" data-tab="users">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path
+                                d="M13 7C13 8.65685 11.6569 10 10 10C8.34315 10 7 8.65685 7 7C7 5.34315 8.34315 4 10 4C11.6569 4 13 5.34315 13 7Z"
+                                stroke="currentColor" stroke-width="1.5" />
+                            <path d="M10 12C6.68629 12 4 14.6863 4 18H16C16 14.6863 13.3137 12 10 12Z"
+                                stroke="currentColor" stroke-width="1.5" />
+                        </svg>
+                        Người dùng
+                    </button>
+                    <button class="admin-tab" data-tab="roles">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path
+                                d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                        Vai trò
+                    </button>
+                    <button class="admin-tab" data-tab="permissions">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path
+                                d="M12 15V17M8 15V17M12 11C14.2091 11 16 9.20914 16 7V4C16 2.89543 15.1046 2 14 2H10C8.89543 2 8 2.89543 8 4V7C8 9.20914 9.79086 11 12 11ZM12 11V13M12 13H14.5C15.8807 13 17 14.1193 17 15.5C17 16.8807 15.8807 18 14.5 18H12M12 13H9.5C8.11929 13 7 14.1193 7 15.5C7 16.8807 8.11929 18 9.5 18H12"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                        Quyền hạn
+                    </button>
+                </div>
+
+                <!-- Users Tab Content -->
+                <div class="admin-tab-content active" id="users-tab-content">
+                    <div class="users-table-container">
+                        <table class="users-table" id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th>Ngày sinh</th>
+                                    <th>Vai trò</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <tr>
+                                    <td colspan="6" class="loading-row">Đang tải...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Roles Tab Content -->
+                <div class="admin-tab-content" id="roles-tab-content">
+                    <div class="tab-header">
+                        <h3>Quản lý Vai trò</h3>
+                        <button class="btn btn-primary" id="create-role-btn">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M10 5V15M5 10H15" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                            </svg>
+                            Tạo vai trò mới
+                        </button>
+                    </div>
+                    <div class="roles-table-container">
+                        <table class="roles-table" id="roles-table">
+                            <thead>
+                                <tr>
+                                    <th>Tên vai trò</th>
+                                    <th>Mô tả</th>
+                                    <th>Quyền hạn</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roles-table-body">
+                                <tr>
+                                    <td colspan="4" class="loading-row">Đang tải...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Permissions Tab Content -->
+                <div class="admin-tab-content" id="permissions-tab-content">
+                    <div class="tab-header">
+                        <h3>Quản lý Quyền hạn</h3>
+                        <button class="btn btn-primary" id="create-permission-btn">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M10 5V15M5 10H15" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                            </svg>
+                            Tạo quyền hạn mới
+                        </button>
+                    </div>
+                    <div class="permissions-table-container">
+                        <table class="permissions-table" id="permissions-table">
+                            <thead>
+                                <tr>
+                                    <th>Tên quyền hạn</th>
+                                    <th>Mô tả</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="permissions-table-body">
+                                <tr>
+                                    <td colspan="3" class="loading-row">Đang tải...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Edit My Info Modal (for regular users) -->
+    <div class="modal" id="edit-my-info-modal">
+        <div class="modal-overlay" id="edit-my-info-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cập nhật thông tin của tôi</h3>
+                <button class="modal-close" id="close-edit-my-info-modal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+            <form id="edit-my-info-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-my-firstname">Họ</label>
+                        <input type="text" id="edit-my-firstname" required>
+                        <span class="error-message" id="edit-my-firstname-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-my-lastname">Tên</label>
+                        <input type="text" id="edit-my-lastname" required>
+                        <span class="error-message" id="edit-my-lastname-error"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-my-username">Username</label>
+                    <input type="text" id="edit-my-username" required>
+                    <span class="error-message" id="edit-my-username-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-my-dob">Ngày sinh</label>
+                    <input type="date" id="edit-my-dob" required>
+                    <span class="error-message" id="edit-my-dob-error"></span>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-edit-my-info">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="save-my-info-btn">
+                        <span class="btn-text">Lưu thay đổi</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal" id="change-password-modal">
+        <div class="modal-overlay" id="change-password-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Đổi mật khẩu</h3>
+                <button class="modal-close" id="close-change-password-modal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+            <form id="change-password-form">
+                <div class="form-group">
+                    <label for="old-password">Mật khẩu hiện tại <span style="color: #f56565;">*</span></label>
+                    <input type="password" id="old-password" placeholder="Nhập mật khẩu hiện tại" required>
+                    <span class="error-message" id="old-password-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="new-password">Mật khẩu mới <span style="color: #f56565;">*</span></label>
+                    <input type="password" id="new-password" placeholder="Tối thiểu 8 ký tự" required>
+                    <span class="error-message" id="new-password-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">Xác nhận mật khẩu mới <span style="color: #f56565;">*</span></label>
+                    <input type="password" id="confirm-password" placeholder="Nhập lại mật khẩu mới" required>
+                    <span class="error-message" id="confirm-password-error"></span>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-change-password">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="save-password-btn">
+                        <span class="btn-text">Đổi mật khẩu</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal (for admin) -->
+    <div class="modal" id="edit-user-modal">
+        <div class="modal-overlay" id="edit-user-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chỉnh sửa người dùng</h3>
+                <button class="modal-close" id="close-edit-user-modal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+            <form id="edit-user-form">
+                <input type="hidden" id="edit-user-id">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-user-firstname">Họ</label>
+                        <input type="text" id="edit-user-firstname" required>
+                        <span class="error-message" id="edit-user-firstname-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-user-lastname">Tên</label>
+                        <input type="text" id="edit-user-lastname" required>
+                        <span class="error-message" id="edit-user-lastname-error"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-user-username">Username</label>
+                    <input type="text" id="edit-user-username" required>
+                    <span class="error-message" id="edit-user-username-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-user-email">Email</label>
+                    <input type="email" id="edit-user-email" required>
+                    <span class="error-message" id="edit-user-email-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-user-dob">Ngày sinh</label>
+                    <input type="date" id="edit-user-dob" required>
+                    <span class="error-message" id="edit-user-dob-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label>Vai trò</label>
+                    <div class="roles-checkboxes" id="edit-user-roles">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="USER" checked disabled>
+                            <span>USER (mặc định)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="ADMIN">
+                            <span>ADMIN</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-edit-user">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="save-user-btn">
+                        <span class="btn-text">Lưu thay đổi</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create/Edit Role Modal -->
+    <div class="modal" id="role-modal">
+        <div class="modal-overlay" id="role-modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="role-modal-title">Tạo vai trò mới</h3>
+                <button class="modal-close" id="close-role-modal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+            <form id="role-form">
+                <input type="hidden" id="role-original-name">
+
+                <div class="form-group">
+                    <label for="role-name">Tên vai trò *</label>
+                    <input type="text" id="role-name" placeholder="VD: MODERATOR" required>
+                    <span class="error-message" id="role-name-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="role-description">Mô tả *</label>
+                    <textarea id="role-description" placeholder="Mô tả vai trò" rows="3" required></textarea>
+                    <span class="error-message" id="role-description-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label>Quyền hạn</label>
+                    <div class="permissions-checkboxes" id="role-permissions">
+                        <p class="loading-text">Đang tải quyền hạn...</p>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-role">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="save-role-btn">
+                        <span class="btn-text">Lưu</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create/Edit Permission Modal -->
+    <div class="modal" id="permission-modal">
+        <div class="modal-overlay" id="permission-modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="permission-modal-title">Tạo quyền hạn mới</h3>
+                <button class="modal-close" id="close-permission-modal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+            <form id="permission-form">
+                <input type="hidden" id="permission-original-name">
+
+                <div class="form-group">
+                    <label for="permission-name">Tên quyền hạn *</label>
+                    <input type="text" id="permission-name" placeholder="VD: DELETE_POST" required>
+                    <span class="error-message" id="permission-name-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="permission-description">Mô tả *</label>
+                    <textarea id="permission-description" placeholder="Mô tả quyền hạn" rows="3" required></textarea>
+                    <span class="error-message" id="permission-description-error"></span>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-permission">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="save-permission-btn">
+                        <span class="btn-text">Lưu</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <div class="toast-icon" id="toast-icon"></div>
+        <div class="toast-content">
+            <span class="toast-title" id="toast-title">Notification</span>
+            <span class="toast-message" id="toast-message">Message</span>
+        </div>
+        <button class="toast-close" id="toast-close">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+        </button>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+
+</html>
