@@ -1,0 +1,656 @@
+// API Configuration
+const API_BASE_URL = "http://localhost:8080/identity";
+
+// Global State
+const buildState = {
+  cpuId: null,
+  mainboardId: null,
+  ramId: null,
+  vgaId: null,
+  ssdIds: [],
+  hddIds: [],
+  psuId: null,
+  caseId: null,
+  coolerId: null,
+};
+
+// Component Definitions
+const componentsConfig = [
+  { id: "cpu", name: "CPU", api: "/cpus", multi: false, icon: "🖥️" },
+  {
+    id: "mainboard",
+    name: "Mainboard",
+    api: "/mainboards",
+    multi: false,
+    icon: "🛹",
+  },
+  { id: "ram", name: "RAM", api: "/rams", multi: false, icon: "🎛️" },
+  { id: "vga", name: "VGA", api: "/vgas", multi: false, icon: "🎮" },
+  {
+    id: "ssd",
+    name: "Ổ cứng SSD",
+    api: "/ssds",
+    multi: true,
+    max: 2,
+    icon: "💽",
+  },
+  {
+    id: "hdd",
+    name: "Ổ cứng HDD",
+    api: "/hdds",
+    multi: true,
+    max: 2,
+    icon: "💿",
+  },
+  { id: "psu", name: "Nguồn (PSU)", api: "/psus", multi: false, icon: "🔋" },
+  {
+    id: "cooler",
+    name: "Tản nhiệt",
+    api: "/coolers",
+    multi: false,
+    icon: "❄️",
+  },
+  {
+    id: "case",
+    name: "Vỏ máy (Case)",
+    api: "/cases",
+    multi: false,
+    icon: "🗄️",
+  },
+];
+
+// Helper to make API calls
+async function apiCall(endpoint, method = "GET", body = null) {
+  const headers = { "Content-Type": "application/json" };
+
+  // Add token if exists (though build check might be public)
+  const token = localStorage.getItem("token");
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : null,
+    });
+    const data = await res.json();
+    return data; // returns { code, message, result }
+  } catch (err) {
+    console.error("API Error:", err);
+    return { code: 9999, message: err.message, result: null };
+  }
+}
+
+// Initialize Page
+document.addEventListener("DOMContentLoaded", () => {
+  initBuildSlots();
+  setupModalEvents();
+
+  document
+    .getElementById("reset-build-btn")
+    .addEventListener("click", resetBuild);
+});
+
+// Setup Initial Slots
+function initBuildSlots() {
+  const container = document.getElementById("build-components-list");
+  container.innerHTML = "";
+
+  componentsConfig.forEach((comp) => {
+    container.appendChild(createSlotElement(comp));
+  });
+}
+
+function createSlotElement(comp) {
+  const el = document.createElement("div");
+  el.className = "component-slot";
+  el.id = `slot-${comp.id}`;
+
+  // Render Empty State
+  renderSlotContent(el, comp, null);
+  return el;
+}
+
+function renderSlotContent(el, comp, partData) {
+  const isFilled = partData !== null;
+
+  if (isFilled) {
+    el.classList.add("filled");
+    const imgUrl =
+      partData.imageUrl || "https://via.placeholder.com/60?text=No+Image";
+    el.innerHTML = `
+            <div class="part-icon-wrap">
+                <img src="${imgUrl}" alt="${partData.name}" onerror="this.src='https://via.placeholder.com/60?text=Load+Error'">
+            </div>
+            <div class="part-info">
+                <div class="part-category">${comp.name}</div>
+                <div class="part-name" title="${partData.name}">${partData.name}</div>
+            </div>
+            <div class="part-actions">
+                <button class="btn btn-secondary btn-change-part" onclick="openPicker('${comp.id}')">Đổi</button>
+                <button class="btn-remove-part" onclick="removePart('${comp.id}')" title="Bỏ chọn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+        `;
+  } else {
+    el.classList.remove("filled");
+    el.innerHTML = `
+            <div class="part-icon-wrap">${comp.icon}</div>
+            <div class="part-info">
+                <div class="part-category">${comp.name}</div>
+                <div class="part-empty-text">Chưa chọn linh kiện</div>
+            </div>
+            <div class="part-actions">
+                <button class="btn btn-primary btn-select-part" onclick="openPicker('${comp.id}')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:0.4rem"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Chọn
+                </button>
+            </div>
+        `;
+  }
+}
+
+// ---- Picker Logic ----
+let currentPickingComponent = null;
+let currentPage = 1;
+const ITEMS_PER_PAGE = 6;
+let currentFilteredItems = [];
+
+function setupModalEvents() {
+  document
+    .getElementById("close-picker-btn")
+    .addEventListener("click", closePicker);
+  document
+    .getElementById("picker-overlay")
+    .addEventListener("click", closePicker);
+
+  const searchInput = document.getElementById("picker-search");
+  searchInput.addEventListener("input", (e) =>
+    filterPickerItems(e.target.value),
+  );
+
+  document
+    .getElementById("detail-back-btn")
+    .addEventListener("click", closeDetailView);
+  document.getElementById("detail-select-btn").addEventListener("click", () => {
+    if (currentlyViewingItem) {
+      selectPart(currentlyViewingItem);
+    }
+  });
+
+  document.getElementById("page-prev-btn").addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderPickerPage();
+    }
+  });
+
+  document.getElementById("page-next-btn").addEventListener("click", () => {
+    const totalPages =
+      Math.ceil(currentFilteredItems.length / ITEMS_PER_PAGE) || 1;
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderPickerPage();
+    }
+  });
+}
+
+function openPicker(compId) {
+  currentPickingComponent = componentsConfig.find((c) => c.id === compId);
+  if (!currentPickingComponent) return;
+
+  document.getElementById("picker-title").innerText =
+    `Chọn ${currentPickingComponent.name}`;
+  document.getElementById("picker-search").value = "";
+
+  closeDetailView(); // Ensure we always start in list view
+
+  const modal = document.getElementById("picker-modal");
+  modal.classList.add("active");
+
+  loadPickerData();
+}
+
+function closePicker() {
+  document.getElementById("picker-modal").classList.remove("active");
+  currentPickingComponent = null;
+}
+
+let pickerCache = {};
+
+async function loadPickerData() {
+  const listEl = document.getElementById("picker-items");
+  listEl.innerHTML =
+    '<div class="loader-view">Đang tải danh sách linh kiện...</div>';
+
+  const comp = currentPickingComponent;
+
+  if (!pickerCache[comp.id]) {
+    const res = await apiCall(comp.api);
+    if (res.code === 1000 && res.result && res.result.data) {
+      pickerCache[comp.id] = res.result.data; // Page response .data holds the array
+    } else if (res.code === 1000 && Array.isArray(res.result)) {
+      // Fallback if APIs return direct array
+      pickerCache[comp.id] = res.result;
+    } else {
+      listEl.innerHTML = `<div class="loader-view error-view">Lỗi tải dữ liệu. Cố thử lại sau!</div>`;
+      return;
+    }
+  }
+
+  currentFilteredItems = pickerCache[comp.id];
+  currentPage = 1;
+  renderPickerPage();
+}
+
+function filterPickerItems(query) {
+  if (!currentPickingComponent || !pickerCache[currentPickingComponent.id])
+    return;
+
+  const q = query.toLowerCase().trim();
+  if (!q) {
+    currentFilteredItems = pickerCache[currentPickingComponent.id];
+  } else {
+    currentFilteredItems = pickerCache[currentPickingComponent.id].filter(
+      (item) => item.name && item.name.toLowerCase().includes(q),
+    );
+  }
+
+  currentPage = 1;
+  renderPickerPage();
+}
+
+function renderPickerPage() {
+  const totalPages =
+    Math.ceil(currentFilteredItems.length / ITEMS_PER_PAGE) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  // Update pagination UI
+  const pageInfo = document.getElementById("page-info");
+  const pagePrev = document.getElementById("page-prev-btn");
+  const pageNext = document.getElementById("page-next-btn");
+
+  if (pageInfo) pageInfo.innerText = `Trang ${currentPage} / ${totalPages}`;
+  if (pagePrev) pagePrev.disabled = currentPage <= 1;
+  if (pageNext) pageNext.disabled = currentPage >= totalPages;
+
+  // Get items for current page
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = currentFilteredItems.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE,
+  );
+
+  renderPickerList(paginatedItems);
+}
+
+function renderPickerList(items) {
+  const listEl = document.getElementById("picker-items");
+  listEl.innerHTML = "";
+
+  if (!items || items.length === 0) {
+    listEl.innerHTML =
+      '<div class="loader-view">Không tìm thấy linh kiện nào.</div>';
+    return;
+  }
+
+  items.forEach((item) => {
+    const card = document.createElement("div");
+    card.className = "part-card";
+    card.onclick = () => viewPartDetail(item);
+
+    const imgUrl =
+      item.imageUrl || "https://via.placeholder.com/150?text=No+Image";
+
+    let subTexts = [];
+    if (item.socket && item.socket.name)
+      subTexts.push(`Socket: ${item.socket.name}`);
+    if (item.ramType && item.ramType.name)
+      subTexts.push(`RAM: ${item.ramType.name}`);
+    if (item.wattage) subTexts.push(`Nguồn: ${item.wattage}W`);
+    if (item.formFactor) subTexts.push(`Size: ${item.formFactor}`);
+
+    let subText = subTexts.join(" | ");
+
+    card.innerHTML = `
+            <img src="${imgUrl}" alt="${item.name}" class="part-card-img" onerror="this.src='https://via.placeholder.com/150?text=Load+Error'">
+            <div class="part-card-title" title="${item.name}">${item.name}</div>
+            <div class="part-card-specs">${subText}</div>
+            <div class="part-card-actions">
+                <button class="btn btn-secondary part-card-select">Chọn</button>
+                <button class="btn btn-secondary part-card-detail">Chi tiết</button>
+            </div>
+        `;
+
+    const selectBtn = card.querySelector(".part-card-select");
+    selectBtn.onclick = (e) => {
+      e.stopPropagation();
+      selectPart(item);
+    };
+
+    const detailBtn = card.querySelector(".part-card-detail");
+    detailBtn.onclick = (e) => {
+      e.stopPropagation();
+      viewPartDetail(item);
+    };
+
+    listEl.appendChild(card);
+  });
+}
+
+// ---- Detail View Logic ----
+let currentlyViewingItem = null;
+
+function viewPartDetail(item) {
+  currentlyViewingItem = item;
+  const listView = document.getElementById("picker-list-view");
+  const detailView = document.getElementById("picker-detail-view");
+  const detailContent = document.getElementById("detail-content");
+
+  let html = `<div style="display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start;">`;
+
+  // Left column: Image & Specs
+  const imgUrl =
+    item.imageUrl || "https://via.placeholder.com/300?text=No+Image";
+  html += `<div style="flex: 1; min-width: 280px; max-width: 380px; display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Hình ảnh vuông -->
+                <div style="width: 100%; aspect-ratio: 1/1; background: white; padding: 1.5rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));">
+                    <img src="${imgUrl}" alt="${item.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                </div>
+                
+                <!-- Thông số kỹ thuật -->
+                <div style="background: white; padding: 1.5rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));">
+                    <h4 style="margin-top: 0; margin-bottom: 1rem; font-weight: 600; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Thông số kỹ thuật</h4>
+                    <div style="display: flex; flex-direction: column;">`;
+
+  // Extract dynamic specs based on item object keys
+  const formatSpec = (label, value) => {
+    if (value === null || value === undefined || value === "") return "";
+
+    let displayValue = value;
+    if (typeof value === "object")
+      displayValue = value.name || JSON.stringify(value);
+    else if (typeof value === "boolean") displayValue = value ? "Có" : "Không";
+
+    return `<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px dashed var(--border-color);">
+                <div style="font-size: 0.9rem; color: var(--text-secondary); padding-right: 1rem;">${label}</div>
+                <div style="font-weight: 600; color: var(--text-primary); text-align: right; font-size: 0.95rem;">${displayValue}</div>
+            </div>`;
+  };
+
+  if (item.socket) html += formatSpec("Socket", item.socket);
+  if (item.coreCount) html += formatSpec("Nhân (Cores)", item.coreCount);
+  if (item.threadCount) html += formatSpec("Luồng (Threads)", item.threadCount);
+  if (item.baseClockInfo) html += formatSpec("Xung cơ bản", item.baseClockInfo);
+  if (item.boostClockInfo)
+    html += formatSpec("Xung tối đa", item.boostClockInfo);
+  if (item.tdp) html += formatSpec("TDP", item.tdp + " W");
+  if (item.hasIntegratedGraphics !== undefined)
+    html += formatSpec("Đồ họa tích hợp", item.hasIntegratedGraphics);
+
+  // Mainboard specific
+  if (item.formFactor) html += formatSpec("Form Factor", item.formFactor);
+  if (item.ramType) html += formatSpec("Loại RAM", item.ramType);
+  if (item.ramSlots) html += formatSpec("Khe cắm RAM", item.ramSlots);
+  if (item.maxRamCapacity)
+    html += formatSpec("RAM tối đa", item.maxRamCapacity + " GB");
+  if (item.pcieVersion) html += formatSpec("PCIe Version", item.pcieVersion);
+  if (item.pcieSlots) html += formatSpec("Khe cắm PCIe", item.pcieSlots);
+  if (item.m2Slots) html += formatSpec("Khe cắm M.2", item.m2Slots);
+  if (item.sataPorts) html += formatSpec("Cổng SATA", item.sataPorts);
+
+  // RAM specific
+  if (item.capacity) html += formatSpec("Dung lượng", item.capacity + " GB");
+  if (item.busSpeed) html += formatSpec("Tốc độ Bus", item.busSpeed + " MHz");
+  if (item.latency) html += formatSpec("Độ trễ", item.latency);
+  if (item.voltage) html += formatSpec("Điện áp", item.voltage + " V");
+  if (item.moduleCount) html += formatSpec("Số thanh (Kit)", item.moduleCount);
+
+  // VGA specific
+  if (item.vram) html += formatSpec("VRAM", item.vram + " GB");
+  if (item.length) html += formatSpec("Chiều dài", item.length + " mm");
+  if (item.powerConnector)
+    html += formatSpec("Đầu cấp nguồn", item.powerConnector);
+  if (item.recommendedPsuWattage && !item.wattage)
+    html += formatSpec("Nguồn khuyến nghị", item.recommendedPsuWattage + " W");
+
+  // PSU specific
+  if (item.wattage) html += formatSpec("Công suất", item.wattage + " W");
+  if (item.efficiencyRating)
+    html += formatSpec("Chuẩn hiệu suất", item.efficiencyRating);
+  if (item.modularType) html += formatSpec("Chuẩn cáp", item.modularType);
+
+  // Storage
+  if (item.type) html += formatSpec("Loại", item.type);
+  if (item.interfaceType)
+    html += formatSpec("Chuẩn kết nối", item.interfaceType);
+  if (item.readSpeed)
+    html += formatSpec("Tốc độ đọc", item.readSpeed + " MB/s");
+  if (item.writeSpeed)
+    html += formatSpec("Tốc độ ghi", item.writeSpeed + " MB/s");
+  if (item.rpm) html += formatSpec("Tốc độ vòng quay", item.rpm + " RPM");
+  if (item.cache) html += formatSpec("Bộ nhớ đệm", item.cache + " MB");
+
+  // Cooler
+  if (item.coolerType) html += formatSpec("Loại tản nhiệt", item.coolerType);
+  if (item.height) html += formatSpec("Chiều cao tản", item.height + " mm");
+  if (item.radiatorSize)
+    html += formatSpec("Kích thước Radiator", item.radiatorSize + " mm");
+  if (item.supportedSockets) {
+    html += formatSpec(
+      "Socket hỗ trợ",
+      item.supportedSockets.map((s) => s.name).join(", "),
+    );
+  }
+
+  // Case
+  if (item.caseSize) html += formatSpec("Cỡ Case", item.caseSize);
+  if (item.maxGpuLength)
+    html += formatSpec("VGA max length", item.maxGpuLength + " mm");
+  if (item.maxCpuCoolerHeight)
+    html += formatSpec("Tản màu cao max", item.maxCpuCoolerHeight + " mm");
+
+  html += `</div></div></div>`;
+
+  // Right column: Content
+  html += `<div style="flex: 2; min-width: 300px; display: flex; flex-direction: column;">
+                <div style="background: white; padding: 1.5rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1)); height: 100%;">
+                    <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0 0 1rem 0;">${item.name}</h2>
+                    <h4 style="margin: 0 0 0.5rem 0; font-weight: 600; color: var(--text-primary);">Mô tả sản phẩm</h4>
+                    <div style="color: var(--text-secondary); line-height: 1.6; white-space: pre-wrap; font-size: 0.95rem;">${item.description || "Chưa có mô tả chung cho sản phẩm này."}</div>
+                </div>
+           </div>`;
+
+  html += `</div>`;
+
+  detailContent.innerHTML = html;
+  const priceEl = document.getElementById("detail-price");
+  if (priceEl) priceEl.innerText = ""; // Bỏ giá liên hệ
+
+  listView.style.display = "none";
+  detailView.style.display = "flex";
+}
+
+function closeDetailView() {
+  currentlyViewingItem = null;
+  document.getElementById("picker-list-view").style.display = "flex";
+  document.getElementById("picker-detail-view").style.display = "none";
+}
+
+function selectPart(item) {
+  const comp = currentPickingComponent;
+
+  // Update State
+  if (comp.multi) {
+    // Multi logic (SSD, HDD). Just replacing first slot for simplicity in this demo, easily extensible
+    buildState[`${comp.id}Ids`] = [item.id];
+  } else {
+    buildState[`${comp.id}Id`] = item.id;
+  }
+
+  // Render Selection in UI
+  const slotEl = document.getElementById(`slot-${comp.id}`);
+  renderSlotContent(slotEl, comp, item);
+
+  closePicker();
+
+  // Trigger compatibility check!
+  checkCompatibility();
+}
+
+function removePart(compId) {
+  const comp = componentsConfig.find((c) => c.id === compId);
+
+  if (comp.multi) {
+    buildState[`${comp.id}Ids`] = [];
+  } else {
+    buildState[`${comp.id}Id`] = null;
+  }
+
+  const slotEl = document.getElementById(`slot-${comp.id}`);
+  renderSlotContent(slotEl, comp, null);
+
+  checkCompatibility();
+}
+
+function resetBuild() {
+  componentsConfig.forEach((comp) => {
+    removePart(comp.id);
+  });
+}
+
+// ---- Compatibility Checking ----
+async function checkCompatibility() {
+  // Collect non-null ids
+  const payload = {};
+  if (buildState.cpuId) payload.cpuId = buildState.cpuId;
+  if (buildState.mainboardId) payload.mainboardId = buildState.mainboardId;
+  if (buildState.ramId) payload.ramId = buildState.ramId;
+  if (buildState.vgaId) payload.vgaId = buildState.vgaId;
+  if (buildState.psuId) payload.psuId = buildState.psuId;
+  if (buildState.caseId) payload.caseId = buildState.caseId;
+  if (buildState.coolerId) payload.coolerId = buildState.coolerId;
+  if (buildState.ssdIds.length > 0) payload.ssdIds = buildState.ssdIds;
+  if (buildState.hddIds.length > 0) payload.hddIds = buildState.hddIds;
+
+  if (Object.keys(payload).length === 0) {
+    // Reset purely
+    resetStatusView();
+    return;
+  }
+
+  const res = await apiCall("/builds/check-compatibility", "POST", payload);
+
+  if (res.code === 1000 && res.result) {
+    updateSummaryView(res.result);
+  } else {
+    showToast(
+      "Lỗi Kiểm Tra",
+      "Không thể kiểm tra tương thích hệ thống: " + (res.message || "Error"),
+      true,
+    );
+  }
+}
+
+function resetStatusView() {
+  const statusBox = document.getElementById("compat-status");
+  statusBox.className = "compat-status neutral";
+
+  document.getElementById("compat-status-title").innerText =
+    "Chưa có linh kiện";
+  document.getElementById("compat-status-desc").innerText =
+    "Hãy bắt đầu chọn linh kiện để kiểm tra";
+
+  document.getElementById("psu-recommend-value").innerText = "0W";
+
+  document.getElementById("error-group").style.display = "none";
+  document.getElementById("warning-group").style.display = "none";
+}
+
+function updateSummaryView(result) {
+  const statusBox = document.getElementById("compat-status");
+  const titleEl = document.getElementById("compat-status-title");
+  const descEl = document.getElementById("compat-status-desc");
+
+  // Status Logic
+  if (result.errors && result.errors.length > 0) {
+    statusBox.className = "compat-status error";
+    titleEl.innerText = "Không tương thích";
+    descEl.innerText = "Vui lòng sửa các lỗi nghiêm trọng bên dưới";
+    statusBox.querySelector(".compat-status-icon").innerHTML =
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+  } else if (result.warnings && result.warnings.length > 0) {
+    statusBox.className = "compat-status warning";
+    titleEl.innerText = "Tương thích (Có cảnh báo)";
+    descEl.innerText = "Các linh kiện khớp nhau, nhưng có lưu ý tối ưu";
+    statusBox.querySelector(".compat-status-icon").innerHTML =
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+  } else {
+    statusBox.className = "compat-status success";
+    titleEl.innerText = "Tương thích hoàn hảo";
+    descEl.innerText = "Tuyệt vời! Không phát hiện vấn đề nào!";
+    statusBox.querySelector(".compat-status-icon").innerHTML =
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+  }
+
+  // PSU Wattage
+  document.getElementById("psu-recommend-value").innerText =
+    `${result.recommendedPsuWattage || 0}W`;
+
+  // Errors
+  const errGroup = document.getElementById("error-group");
+  const errList = document.getElementById("error-list");
+  if (result.errors && result.errors.length > 0) {
+    errList.innerHTML = result.errors.map((msg) => `<li>${msg}</li>`).join("");
+    errGroup.style.display = "block";
+  } else {
+    errGroup.style.display = "none";
+    errList.innerHTML = "";
+  }
+
+  // Warnings
+  const warnGroup = document.getElementById("warning-group");
+  const warnList = document.getElementById("warning-list");
+  if (result.warnings && result.warnings.length > 0) {
+    warnList.innerHTML = result.warnings
+      .map((msg) => `<li>${msg}</li>`)
+      .join("");
+    warnGroup.style.display = "block";
+  } else {
+    warnGroup.style.display = "none";
+    warnList.innerHTML = "";
+  }
+}
+
+// ---- Toast Utilities ----
+function showToast(title, message, isError = false) {
+  const toast = document.getElementById("toast");
+  const titleEl = document.getElementById("toast-title");
+  const msgEl = document.getElementById("toast-message");
+  const iconEl = document.getElementById("toast-icon");
+
+  titleEl.textContent = title;
+  msgEl.textContent = message;
+
+  if (isError) {
+    toast.style.borderLeftColor = "#f56565";
+    iconEl.innerHTML =
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f56565" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+  } else {
+    toast.style.borderLeftColor = "#48bb78";
+    iconEl.innerHTML =
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#48bb78" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+  }
+
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 4000);
+}
+
+document.getElementById("toast-close")?.addEventListener("click", () => {
+  document.getElementById("toast").classList.remove("show");
+});
