@@ -1038,7 +1038,6 @@ body {
     display: flex;
     align-items: center;
     gap: 1rem;
-    min-width: 320px;
     max-width: 400px;
     transform: translateX(500px);
     opacity: 0;
