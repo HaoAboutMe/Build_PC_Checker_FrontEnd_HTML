@@ -329,6 +329,113 @@
     color: var(--primary-color);
 }
 
+/* Bottleneck Analysis Section */
+.bottleneck-analysis {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: var(--border-radius-lg);
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+    animation: slideInUp 0.5s ease;
+}
+
+.bottleneck-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.bottleneck-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.bottleneck-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.bottleneck-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.bottleneck-value-display {
+    margin-bottom: 0.5rem;
+}
+
+.bottleneck-percentage {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-color);
+}
+
+.bottleneck-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.bottleneck-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+    border-radius: 10px;
+    transition: width 1s ease, background 0.5s ease;
+    position: relative;
+}
+
+.bottleneck-badge {
+    display: inline-block;
+    padding: 0.4rem 0.875rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.bottleneck-badge.excellent {
+    background: #10b981;
+    color: white;
+}
+
+.bottleneck-badge.good {
+    background: #3b82f6;
+    color: white;
+}
+
+.bottleneck-badge.minor {
+    background: #f59e0b;
+    color: white;
+}
+
+.bottleneck-badge.significant {
+    background: #ef4444;
+    color: white;
+}
+
+.bottleneck-wattage {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #f59e0b;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Feedback Lists */
 .feedback-group { margin-bottom: 1rem; }
 .feedback-heading {

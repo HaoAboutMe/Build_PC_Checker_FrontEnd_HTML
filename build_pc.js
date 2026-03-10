@@ -548,6 +548,9 @@ function selectPart(item) {
 
   // Trigger compatibility check!
   checkCompatibility();
+  
+  // Trigger bottleneck analysis
+  analyzeBottleneck();
 }
 
 function removePart(compId) {
@@ -566,6 +569,9 @@ function removePart(compId) {
   updateSaveBuildButtonState();
 
   checkCompatibility();
+  
+  // Trigger bottleneck analysis
+  analyzeBottleneck();
 }
 
 function resetBuild() {
@@ -710,6 +716,126 @@ function showToast(title, message, isError = false) {
 document.getElementById("toast-close")?.addEventListener("click", () => {
   document.getElementById("toast").classList.remove("show");
 });
+
+// ===================================
+// BOTTLENECK ANALYSIS FEATURE
+// ===================================
+
+// Balance status configuration for bottleneck analysis
+const BALANCE_STATUS_CONFIG = {
+  'Excellent Balance': { class: 'excellent', progressColor: 'linear-gradient(90deg, #10b981, #059669)' },
+  'Good Balance': { class: 'good', progressColor: 'linear-gradient(90deg, #3b82f6, #2563eb)' },
+  'Minor Bottleneck': { class: 'minor', progressColor: 'linear-gradient(90deg, #f59e0b, #d97706)' },
+  'Significant Bottleneck': { class: 'significant', progressColor: 'linear-gradient(90deg, #ef4444, #dc2626)' }
+};
+
+/**
+ * Check if all required components for bottleneck analysis are selected
+ * @returns {boolean}
+ */
+function hasBottleneckRequiredParts() {
+  return buildState.cpuId && buildState.vgaId && buildState.ramId && buildState.ssdIds.length > 0;
+}
+
+/**
+ * Analyze bottleneck for the current build
+ */
+async function analyzeBottleneck() {
+  // Check if we have all required components
+  if (!hasBottleneckRequiredParts()) {
+    hideBottleneckSection();
+    return;
+  }
+
+  // Prepare payload for API
+  const payload = {
+    cpuId: buildState.cpuId,
+    gpuId: buildState.vgaId,
+    ramId: buildState.ramId,
+    ssdId: buildState.ssdIds[0] // Use first SSD
+  };
+
+  try {
+    const res = await apiCall("/builds/analyze", "POST", payload);
+
+    if (res.code === 1000 && res.result) {
+      displayBottleneckResults(res.result);
+    } else {
+      console.warn("Bottleneck analysis returned non-1000 code:", res.message);
+      hideBottleneckSection();
+    }
+  } catch (error) {
+    console.error("Bottleneck analysis error:", error);
+    hideBottleneckSection();
+  }
+}
+
+/**
+ * Display bottleneck analysis results
+ * @param {Object} result - Analysis result with bottleneck, balanceStatus, estimatedWattage
+ */
+function displayBottleneckResults(result) {
+  const { bottleneck, balanceStatus, estimatedWattage } = result;
+
+  // Show the bottleneck section
+  const bottleneckSection = document.getElementById("bottleneck-section");
+  if (bottleneckSection) {
+    bottleneckSection.style.display = "block";
+  }
+
+  // Update bottleneck percentage
+  const percentageEl = document.getElementById("bottleneck-percentage");
+  if (percentageEl) {
+    percentageEl.textContent = `${bottleneck.toFixed(1)}%`;
+  }
+
+  // Update progress bar
+  const progressFill = document.getElementById("bottleneck-progress-fill");
+  if (progressFill) {
+    progressFill.style.width = `${Math.min(bottleneck, 100)}%`;
+    
+    // Apply color based on balance status
+    const statusConfig = BALANCE_STATUS_CONFIG[balanceStatus];
+    if (statusConfig) {
+      progressFill.style.background = statusConfig.progressColor;
+    }
+  }
+
+  // Update balance status badge
+  const badgeEl = document.getElementById("bottleneck-badge");
+  if (badgeEl) {
+    badgeEl.textContent = balanceStatus;
+    badgeEl.className = "bottleneck-badge";
+    
+    const statusConfig = BALANCE_STATUS_CONFIG[balanceStatus];
+    if (statusConfig) {
+      badgeEl.classList.add(statusConfig.class);
+    }
+  }
+
+  // Update estimated wattage
+  const wattageEl = document.getElementById("bottleneck-wattage");
+  if (wattageEl) {
+    wattageEl.textContent = `${estimatedWattage.toFixed(0)}W`;
+  }
+
+  // Show toast notification
+  showToast(
+    "Phân tích Bottleneck",
+    `Trạng thái: ${balanceStatus} - Bottleneck: ${bottleneck.toFixed(1)}%`,
+    false
+  );
+}
+
+/**
+ * Hide bottleneck section when requirements not met
+ */
+function hideBottleneckSection() {
+  const bottleneckSection = document.getElementById("bottleneck-section");
+  if (bottleneckSection) {
+    bottleneckSection.style.display = "none";
+  }
+}
 
 // ===================================
 // SAVE BUILD FEATURE
