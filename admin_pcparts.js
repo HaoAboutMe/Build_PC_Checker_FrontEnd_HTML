@@ -341,13 +341,21 @@ async function refreshToken() {
 async function apiCall(endpoint, options = {}, retryCount = 0) {
   const currentToken = localStorage.getItem("token");
 
+  const headers = {
+    Authorization: `Bearer ${currentToken}`,
+    ...options.headers,
+  };
+
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] =
+      options.headers?.["Content-Type"] || "application/json";
+  } else if (headers["Content-Type"]) {
+    delete headers["Content-Type"];
+  }
+
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${currentToken}`,
-      ...options.headers,
-    },
+    headers,
   });
 
   // Check if 204 layout (Delete might return no content)
@@ -604,9 +612,19 @@ function openModal(itemId) {
     if (f.t === "text" || f.t === "number") {
       const readOnly = f.k === "id" && isEditing;
       let style = readOnly ? 'style="opacity: 0.6; pointer-events: none;"' : "";
-      inputHtml = `<input type="${f.t}" id="field-${f.k}" ${f.req ? "required" : ""} ${readOnly ? "readonly" : ""} ${style}>`;
+
       if (f.k === "imageUrl") {
-        inputHtml += `<div class="pc-img-preview-wrap"><img id="preview-${f.k}" class="pc-img-preview" src="" alt="Preview" style="display:none; margin-top:0.5rem; max-height:100px; border-radius:4px;"></div>`;
+        inputHtml = `
+            <input type="hidden" id="field-${f.k}" ${f.req ? "required" : ""}>
+            <label class="btn btn-secondary" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; width: 100%;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="margin-right: 0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span id="upload-text-${f.k}">Bấm vào đây để chọn ảnh</span>
+                <input type="file" id="upload-${f.k}" accept="image/*" style="display:none;">
+            </label>
+        `;
+        inputHtml += `<div class="pc-img-preview-wrap" style="text-align: center;"><img id="preview-${f.k}" class="pc-img-preview" src="" alt="Preview" style="display:none; margin-top:0.5rem; max-height:120px; border-radius:4px; max-width: 100%;"></div>`;
+      } else {
+        inputHtml = `<input type="${f.t}" id="field-${f.k}" ${f.req ? "required" : ""} ${readOnly ? "readonly" : ""} ${style}>`;
       }
     } else if (f.t === "textarea") {
       inputHtml = `<textarea id="field-${f.k}" ${f.req ? "required" : ""} rows="3"></textarea>`;
@@ -648,6 +666,71 @@ function openModal(itemId) {
         preview.style.display = "none";
       }
     });
+
+    const fileInput = document.getElementById("upload-imageUrl");
+    const uploadText = document.getElementById("upload-text-imageUrl");
+    if (fileInput && uploadText) {
+      fileInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        uploadText.textContent = "Đang tải...";
+        fileInput.disabled = true;
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("entity", currentEntityKey || "common");
+
+        try {
+          const currentToken = localStorage.getItem("token");
+          const uploadResRaw = await fetch(`${API_BASE_URL}/api/files/upload`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${currentToken}`,
+            },
+            body: formData,
+          });
+
+          if (!uploadResRaw.ok) {
+            throw new Error("Lỗi HTTP: " + uploadResRaw.status);
+          }
+
+          const uploadRes = await uploadResRaw.json();
+
+          let uploadedImageUrl = null;
+          if (typeof uploadRes === "string") {
+            uploadedImageUrl = uploadRes;
+          } else if (uploadRes && typeof uploadRes === "object") {
+            uploadedImageUrl =
+              uploadRes.url ||
+              uploadRes.imageUrl ||
+              uploadRes.fileUrl ||
+              uploadRes.result ||
+              null;
+            if (!uploadedImageUrl) {
+              const firstStringVal = Object.values(uploadRes).find(
+                (v) => typeof v === "string",
+              );
+              if (firstStringVal) uploadedImageUrl = firstStringVal;
+            }
+          }
+
+          if (uploadedImageUrl) {
+            imgInput.value = uploadedImageUrl;
+            imgInput.dispatchEvent(new Event("input"));
+            showToast("Thành công", "Đã tải ảnh lên server.");
+          } else {
+            throw new Error("Không thể trích xuất URL ảnh từ server.");
+          }
+        } catch (err) {
+          showToast("Lỗi", "Tải ảnh thất bại: " + err.message, true);
+        } finally {
+          uploadText.textContent = "Chọn File";
+          fileInput.disabled = false;
+          fileInput.value = ""; // Reset file input
+        }
+      });
+    }
   }
 
   if (isEditing) {
