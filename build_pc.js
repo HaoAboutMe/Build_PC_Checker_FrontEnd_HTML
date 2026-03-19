@@ -94,6 +94,9 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Update Save Build button state on page load
   updateSaveBuildButtonState();
+
+  // Bottleneck check trigger
+  document.getElementById("check-bottleneck-btn").addEventListener("click", analyzeBottleneck);
 });
 
 // Setup Initial Slots
@@ -563,11 +566,11 @@ function selectPart(item) {
   // Update Save Build button state
   updateSaveBuildButtonState();
 
-  // Trigger compatibility check!
+  // Trigger compatibility check (keep it automatic)
   checkCompatibility();
   
-  // Trigger bottleneck analysis
-  analyzeBottleneck();
+  // Reset bottleneck results when component changed
+  hideBottleneckResults();
 }
 
 function removePart(compId) {
@@ -587,8 +590,8 @@ function removePart(compId) {
 
   checkCompatibility();
   
-  // Trigger bottleneck analysis
-  analyzeBottleneck();
+  // Reset bottleneck results when part removed
+  hideBottleneckResults();
 }
 
 function resetBuild() {
@@ -758,99 +761,104 @@ function hasBottleneckRequiredParts() {
  * Analyze bottleneck for the current build
  */
 async function analyzeBottleneck() {
-  // Check if we have all required components
-  if (!hasBottleneckRequiredParts()) {
-    hideBottleneckSection();
+  const btn = document.getElementById("check-bottleneck-btn");
+  
+  if (!buildState.cpuId || !buildState.vgaId) {
+    showToast("Thiếu linh kiện", "⚠️ Cần chọn ít nhất CPU và VGA để phân tích Bottleneck", true);
     return;
   }
 
-  // Prepare payload for API
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner">⌛</span>';
+
   const payload = {
     cpuId: buildState.cpuId,
-    gpuId: buildState.vgaId,
-    ramId: buildState.ramId,
-    ssdId: buildState.ssdIds[0] // Use first SSD
+    vgaId: buildState.vgaId,
+    gpuId: buildState.vgaId
   };
 
   try {
     const res = await apiCall("/builds/analyze", "POST", payload);
 
-    if (res.code === 1000 && res.result) {
+    if (res && res.code === 1000 && res.result) {
       displayBottleneckResults(res.result);
     } else {
-      console.warn("Bottleneck analysis returned non-1000 code:", res.message);
-      hideBottleneckSection();
+      showToast("Lỗi", (res && res.message) ? res.message : "Dữ liệu phân tích không hợp lệ", true);
+      hideBottleneckResults();
     }
   } catch (error) {
     console.error("Bottleneck analysis error:", error);
-    hideBottleneckSection();
+    showToast("Lỗi", "Lỗi xử lý: " + error.message, true);
+    hideBottleneckResults();
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
   }
 }
 
 /**
  * Display bottleneck analysis results
- * @param {Object} result - Analysis result with bottleneck, balanceStatus, estimatedWattage
  */
 function displayBottleneckResults(result) {
-  const { bottleneck, balanceStatus, estimatedWattage } = result;
+  if (!result || !result.results) return;
+  const analysis = result.results;
 
-  // Show the bottleneck section
-  const bottleneckSection = document.getElementById("bottleneck-section");
-  if (bottleneckSection) {
-    bottleneckSection.style.display = "block";
-  }
+  const content = document.getElementById("bottleneck-results-content");
+  if (content) content.style.display = "block";
 
-  // Update bottleneck percentage
-  const percentageEl = document.getElementById("bottleneck-percentage");
-  if (percentageEl) {
-    percentageEl.textContent = `${bottleneck.toFixed(1)}%`;
-  }
+  const res1080 = analysis["1080p"] || {};
+  const res2k = analysis["2k"] || {};
+  const res4k = analysis["4k"] || {};
 
-  // Update progress bar
-  const progressFill = document.getElementById("bottleneck-progress-fill");
-  if (progressFill) {
-    progressFill.style.width = `${Math.min(bottleneck, 100)}%`;
+  const updateRes = (id, data) => {
+    const el = document.getElementById(id);
+    if (!el) return;
     
-    // Apply color based on balance status
-    const statusConfig = BALANCE_STATUS_CONFIG[balanceStatus];
-    if (statusConfig) {
-      progressFill.style.background = statusConfig.progressColor;
-    }
+    const severityMap = {
+      "NONE": { text: "Cân bằng", color: "#38a169" },
+      "LOW": { text: "Nghẽn nhẹ", color: "#81e6d9" },
+      "MEDIUM": { text: "Nghẽn vừa", color: "#dd6b20" },
+      "HIGH": { text: "Nghẽn nặng", color: "#e53e3e" }
+    };
+
+    const severity = (data.severity || "NONE").toUpperCase();
+    const config = severityMap[severity] || { text: severity, color: "#a0aec0" };
+
+    el.textContent = config.text;
+    el.style.color = config.color;
+    el.style.fontSize = "0.85rem";
+    el.style.fontWeight = "800";
+  };
+
+  updateRes("bottleneck-1080p", res1080);
+  updateRes("bottleneck-2k", res2k);
+  updateRes("bottleneck-4k", res4k);
+
+  // Hide Wattage as it's not in this response structure
+  const wattageSection = document.getElementById("bottleneck-wattage-item");
+  if (wattageSection) {
+      wattageSection.style.display = "none";
   }
 
-  // Update balance status badge
-  const badgeEl = document.getElementById("bottleneck-badge");
-  if (badgeEl) {
-    badgeEl.textContent = balanceStatus;
-    badgeEl.className = "bottleneck-badge";
-    
-    const statusConfig = BALANCE_STATUS_CONFIG[balanceStatus];
-    if (statusConfig) {
-      badgeEl.classList.add(statusConfig.class);
-    }
+  // Update Message (all resolutions)
+  const msgEl = document.getElementById("bottleneck-message");
+  if (msgEl) {
+      msgEl.innerHTML = `
+          <div style="margin-bottom: 0.5rem;"><strong style="color: var(--primary-color);">1080P:</strong> ${res1080.message || "Không có dữ liệu"}</div>
+          <div style="margin-bottom: 0.5rem;"><strong style="color: var(--primary-color);">2K:</strong> ${res2k.message || "Không có dữ liệu"}</div>
+          <div><strong style="color: var(--primary-color);">4K:</strong> ${res4k.message || "Không có dữ liệu"}</div>
+      `;
   }
-
-  // Update estimated wattage
-  const wattageEl = document.getElementById("bottleneck-wattage");
-  if (wattageEl) {
-    wattageEl.textContent = `${estimatedWattage.toFixed(0)}W`;
-  }
-
-  // Show toast notification
-  showToast(
-    "Phân tích Bottleneck",
-    `Trạng thái: ${balanceStatus} - Bottleneck: ${bottleneck.toFixed(1)}%`,
-    false
-  );
 }
 
 /**
- * Hide bottleneck section when requirements not met
+ * Hide bottleneck results when requirements not met or something changed
  */
-function hideBottleneckSection() {
-  const bottleneckSection = document.getElementById("bottleneck-section");
-  if (bottleneckSection) {
-    bottleneckSection.style.display = "none";
+function hideBottleneckResults() {
+  const content = document.getElementById("bottleneck-results-content");
+  if (content) {
+    content.style.display = "none";
   }
 }
 
@@ -863,7 +871,16 @@ function hideBottleneckSection() {
  * @returns {boolean}
  */
 function hasRequiredParts() {
-  return buildState.cpuId && buildState.mainboardId && buildState.ramId;
+  // Return true if any part is selected
+  return buildState.cpuId || 
+         buildState.mainboardId || 
+         buildState.ramId || 
+         buildState.vgaId || 
+         buildState.psuId || 
+         buildState.caseId || 
+         buildState.coolerId || 
+         buildState.ssdIds.length > 0 || 
+         buildState.hddIds.length > 0;
 }
 
 /**
@@ -878,7 +895,7 @@ function updateSaveBuildButtonState() {
     saveBtn.title = "Lưu cấu hình hiện tại";
   } else {
     saveBtn.disabled = true;
-    saveBtn.title = "Cần chọn CPU, Mainboard và RAM trước khi lưu";
+    saveBtn.title = "Hãy chọn ít nhất một linh kiện để lưu";
   }
 }
 

@@ -90,39 +90,45 @@
                     </div>
 
                     <!-- Bottleneck Analysis -->
-                    <div class="bottleneck-analysis" id="bottleneck-section" style="display: none;">
-                        <div class="bottleneck-header">
+                    <div class="bottleneck-analysis" id="bottleneck-section">
+                        <div class="bottleneck-header" style="display: flex; justify-content: space-between; align-items: center;">
                             <h3 style="font-size: 1rem; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                                Phân tích Bottleneck
+                                Bottleneck
                             </h3>
+                            <button id="check-bottleneck-btn" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">
+                                🔍 Phân tích
+                            </button>
                         </div>
                         
-                        <div class="bottleneck-content">
-                            <!-- Bottleneck Percentage -->
-                            <div class="bottleneck-item">
-                                <div class="bottleneck-label">Tỷ lệ Bottleneck</div>
-                                <div class="bottleneck-value-display">
-                                    <span class="bottleneck-percentage" id="bottleneck-percentage">0%</span>
+                        <div class="bottleneck-content" id="bottleneck-results-content" style="display: none;">
+                            <!-- Bottleneck by Resolutions -->
+                            <div class="bottleneck-resolutions" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem;">
+                                <div class="resolution-item" style="text-align: center; background: #f7fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 0.7rem; color: var(--text-light); font-weight: 700;">1080P</div>
+                                    <div id="bottleneck-1080p" style="font-size: 1.1rem; font-weight: 800; color: var(--primary-color);">0%</div>
                                 </div>
-                                <div class="bottleneck-progress-bar">
-                                    <div class="bottleneck-progress-fill" id="bottleneck-progress-fill"></div>
+                                <div class="resolution-item" style="text-align: center; background: #f7fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 0.7rem; color: var(--text-light); font-weight: 700;">2K</div>
+                                    <div id="bottleneck-2k" style="font-size: 1.1rem; font-weight: 800; color: var(--primary-color);">0%</div>
+                                </div>
+                                <div class="resolution-item" style="text-align: center; background: #f7fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <div style="font-size: 0.7rem; color: var(--text-light); font-weight: 700;">4K</div>
+                                    <div id="bottleneck-4k" style="font-size: 1.1rem; font-weight: 800; color: var(--primary-color);">0%</div>
                                 </div>
                             </div>
 
-                            <!-- Balance Status -->
-                            <div class="bottleneck-item">
-                                <div class="bottleneck-label">Kiểm tra nghẽn cổ chai</div>
-                                <div class="bottleneck-value-display">
-                                    <span class="bottleneck-badge" id="bottleneck-badge">Đang phân tích...</span>
-                                </div>
+                            <!-- Balance Status Message -->
+                            <div class="bottleneck-item" style="margin-bottom: 1rem;">
+                                <div class="bottleneck-label">Trạng thái cân bằng</div>
+                                <div id="bottleneck-message" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-top: 4px;">Đang phân tích cấu hình...</div>
                             </div>
 
                             <!-- Estimated Wattage -->
-                            <div class="bottleneck-item" style="border-bottom: none; padding-bottom: 0;">
+                            <div class="bottleneck-item" id="bottleneck-wattage-item" style="border-bottom: none; padding-bottom: 0;">
                                 <div class="bottleneck-label">⚡ Công suất dự kiến</div>
                                 <div class="bottleneck-value-display">
-                                    <span class="bottleneck-wattage" id="bottleneck-wattage">0W</span>
+                                    <span class="bottleneck-wattage" id="bottleneck-wattage" style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">0W</span>
                                 </div>
                             </div>
                         </div>
