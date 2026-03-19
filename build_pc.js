@@ -240,8 +240,25 @@ function setupModalEvents() {
       if (saveBuildModal.classList.contains("active")) {
         closeSaveBuildModal();
       }
+      const compatErrorModal = document.getElementById("compat-error-modal");
+      if (compatErrorModal && compatErrorModal.classList.contains("active")) {
+        closeCompatErrorModal();
+      }
+      closePicker();
     }
   });
+
+  // Compatibility Error Modal Events
+  document
+    .getElementById("close-compat-error-btn")
+    .addEventListener("click", closeCompatErrorModal);
+  document
+    .getElementById("confirm-compat-error-btn")
+    .addEventListener("click", closeCompatErrorModal);
+  const compatOverlay = document.getElementById("compat-error-overlay");
+  if (compatOverlay) {
+    compatOverlay.addEventListener("click", closeCompatErrorModal);
+  }
 }
 
 function openPicker(compId) {
@@ -874,9 +891,9 @@ function getJWTToken() {
 }
 
 /**
- * Open Save Build Modal
+ * Step 1: Check compatibility BEFORE opening the save build name modal
  */
-function openSaveBuildModal() {
+async function openSaveBuildModal() {
   // Check JWT token first
   const token = getJWTToken();
   if (!token) {
@@ -885,14 +902,13 @@ function openSaveBuildModal() {
       "⚠️ Vui lòng đăng nhập để lưu cấu hình",
       true
     );
-    // Redirect to login page after delay
     setTimeout(() => {
       window.location.href = "index.html?redirect=build_pc.html";
     }, 2000);
     return;
   }
   
-  // Check required parts
+  // Check required parts (Client side validation)
   if (!hasRequiredParts()) {
     showToast(
       "Thiếu linh kiện",
@@ -901,22 +917,146 @@ function openSaveBuildModal() {
     );
     return;
   }
-  
-  // Clear previous form data
-  document.getElementById("build-name").value = "";
-  document.getElementById("build-description").value = "";
-  document.getElementById("desc-char-count").textContent = "0";
-  document.getElementById("build-name-error").style.display = "none";
-  document.getElementById("build-name").classList.remove("error");
 
-  // Show modal
-  const modal = document.getElementById("save-build-modal");
-  modal.classList.add("active");
-  
-  // Focus on name input for better UX
-  setTimeout(() => {
-    document.getElementById("build-name").focus();
-  }, 100);
+  // 1. PERFORM COMPATIBILITY CHECK FIRST
+  const saveBtn = document.getElementById("save-build-btn");
+  const originalHtml = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Đang kiểm tra...';
+
+  try {
+    const payload = buildPayloadForCheck();
+    const response = await fetch(`${API_BASE_URL}/builds/check-compatibility`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const resData = await response.json();
+    
+    // Check if compatible
+    if (resData.code === 1000 && resData.result && resData.result.compatible === true) {
+      // 2. IF COMPATIBLE -> OPEN NAME INPUT MODAL
+      document.getElementById("build-name").value = "";
+      document.getElementById("build-description").value = "";
+      document.getElementById("desc-char-count").textContent = "0";
+      document.getElementById("build-name-error").style.display = "none";
+      document.getElementById("build-name").classList.remove("error");
+
+      const modal = document.getElementById("save-build-modal");
+      modal.classList.add("active");
+      
+      setTimeout(() => {
+        document.getElementById("build-name").focus();
+      }, 100);
+    } else {
+      // 3. IF NOT COMPATIBLE -> SHOW ERROR MODAL
+      const errors = resData.result ? resData.result.errors : ["Có lỗi không xác định xảy ra"];
+      showCompatErrorModal(errors);
+    }
+  } catch (error) {
+    console.error("Compatibility check error:", error);
+    showToast("Lỗi", "❌ Không thể kiểm tra tương thích, vui lòng thử lại sau.", true);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalHtml;
+  }
+}
+
+/**
+ * Step 2: Handle Final Save (POST /builds)
+ */
+async function handleSaveBuild() {
+  const buildName = document.getElementById("build-name").value.trim();
+  const buildDescription = document.getElementById("build-description").value.trim();
+  const errorEl = document.getElementById("build-name-error");
+  const inputEl = document.getElementById("build-name");
+
+  if (!buildName) {
+    errorEl.textContent = "Tên cấu hình không được để trống";
+    errorEl.style.display = "block";
+    inputEl.classList.add("error");
+    inputEl.focus();
+    return;
+  }
+
+  const token = getJWTToken();
+  const selectedParts = buildSelectedParts();
+  const payload = {
+    name: buildName,
+    description: buildDescription || undefined,
+    parts: selectedParts
+  };
+
+  const saveBtn = document.getElementById("confirm-save-build-btn");
+  const originalText = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Đang lưu...';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/builds`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (result.code === 1000) {
+      closeSaveBuildModal();
+      showToast("Thành công", "✅ Lưu cấu hình thành công!", false);
+      setTimeout(() => {
+        window.location.href = "my-builds.html"; // Chuyển hướng về trang My Builds
+      }, 1500);
+    } else if (result.code === 5004) {
+      errorEl.textContent = "Tên cấu hình này đã tồn tại trong tài khoản của bạn. Vui lòng chọn một tên khác!";
+      errorEl.style.display = "block";
+      inputEl.classList.add("error");
+    } else if (result.code === 5005) {
+      closeSaveBuildModal();
+      showToast("Lỗi", "❌ Cấu hình PC không hợp lệ hoặc đã xảy ra xung đột. Vui lòng kiểm tra lại.", true);
+    } else {
+      showToast("Lỗi", result.message || "❌ Có lỗi xảy ra, vui lòng thử lại", true);
+    }
+  } catch (error) {
+    showToast("Lỗi kết nối", "❌ Không thể kết nối đến server", true);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalText;
+  }
+}
+
+/**
+ * Helper: Helper to build payload for compatibility check
+ */
+function buildPayloadForCheck() {
+  const payload = {};
+  if (buildState.cpuId) payload.cpuId = buildState.cpuId;
+  if (buildState.mainboardId) payload.mainboardId = buildState.mainboardId;
+  if (buildState.ramId) payload.ramId = buildState.ramId;
+  if (buildState.vgaId) payload.vgaId = buildState.vgaId;
+  if (buildState.psuId) payload.psuId = buildState.psuId;
+  if (buildState.caseId) payload.caseId = buildState.caseId;
+  if (buildState.coolerId) payload.coolerId = buildState.coolerId;
+  if (buildState.ssdIds.length > 0) payload.ssdIds = buildState.ssdIds;
+  if (buildState.hddIds.length > 0) payload.hddIds = buildState.hddIds;
+  return payload;
+}
+
+/**
+ * Modal helpers for Compatibility Errors
+ */
+function showCompatErrorModal(errors) {
+  const listEl = document.getElementById("compat-error-list");
+  listEl.innerHTML = errors.map(err => `<li>${err}</li>`).join("");
+  document.getElementById("compat-error-modal").classList.add("active");
+}
+
+function closeCompatErrorModal() {
+  document.getElementById("compat-error-modal").classList.remove("active");
 }
 
 /**
@@ -934,8 +1074,6 @@ function closeSaveBuildModal() {
  */
 function buildSelectedParts() {
   const selectedParts = {};
-
-  // Map buildState to the format expected by the API
   if (buildState.cpuId) selectedParts.cpu = buildState.cpuId;
   if (buildState.mainboardId) selectedParts.mainboard = buildState.mainboardId;
   if (buildState.ramId) selectedParts.ram = buildState.ramId;
@@ -943,184 +1081,8 @@ function buildSelectedParts() {
   if (buildState.psuId) selectedParts.psu = buildState.psuId;
   if (buildState.caseId) selectedParts.case = buildState.caseId;
   if (buildState.coolerId) selectedParts.cooler = buildState.coolerId;
-  
-  // For SSD and HDD, use the first one if available
-  if (buildState.ssdIds && buildState.ssdIds.length > 0) {
-    selectedParts.ssd = buildState.ssdIds[0];
-  }
-  if (buildState.hddIds && buildState.hddIds.length > 0) {
-    selectedParts.hdd = buildState.hddIds[0];
-  }
-
+  if (buildState.ssdIds && buildState.ssdIds.length > 0) selectedParts.ssd = buildState.ssdIds[0];
+  if (buildState.hddIds && buildState.hddIds.length > 0) selectedParts.hdd = buildState.hddIds[0];
   return selectedParts;
-}
-
-/**
- * Handle Save Build - Validate and Send Request
- */
-async function handleSaveBuild() {
-  const buildName = document.getElementById("build-name").value.trim();
-  const buildDescription = document.getElementById("build-description").value.trim();
-  const errorEl = document.getElementById("build-name-error");
-  const inputEl = document.getElementById("build-name");
-
-  // Validate Build Name (required, max 100 chars)
-  if (!buildName) {
-    errorEl.textContent = "Tên cấu hình không được để trống";
-    errorEl.style.display = "block";
-    inputEl.classList.add("error");
-    inputEl.focus();
-    return;
-  }
-  
-  if (buildName.length > 100) {
-    errorEl.textContent = "Tên cấu hình tối đa 100 ký tự";
-    errorEl.style.display = "block";
-    inputEl.classList.add("error");
-    inputEl.focus();
-    return;
-  }
-
-  // Validate Description (max 500 chars)
-  if (buildDescription.length > 500) {
-    showToast(
-      "Lỗi validation",
-      "Mô tả tối đa 500 ký tự",
-      true
-    );
-    return;
-  }
-
-  // Hide error if previously shown
-  errorEl.style.display = "none";
-  inputEl.classList.remove("error");
-
-  // Check JWT token
-  const token = getJWTToken();
-  if (!token) {
-    showToast(
-      "Chưa đăng nhập",
-      "⚠️ Vui lòng đăng nhập để lưu cấu hình",
-      true
-    );
-    closeSaveBuildModal();
-    setTimeout(() => {
-      window.location.href = "index.html?redirect=build_pc.html";
-    }, 2000);
-    return;
-  }
-
-  // Build the parts object
-  const selectedParts = buildSelectedParts();
-
-  // Check if minimum parts are selected
-  if (!selectedParts.cpu || !selectedParts.mainboard || !selectedParts.ram) {
-    showToast(
-      "Thiếu linh kiện",
-      "❌ Phải chọn ít nhất CPU, Mainboard và RAM",
-      true
-    );
-    return;
-  }
-
-  // Prepare request payload
-  const payload = {
-    name: buildName,
-    description: buildDescription || undefined, // Don't send empty string
-    parts: selectedParts
-  };
-
-  // Disable form inputs and button during submission
-  const saveBtn = document.getElementById("confirm-save-build-btn");
-  const cancelBtn = document.getElementById("cancel-save-build-btn");
-  const closeBtn = document.getElementById("close-save-build-btn");
-  const originalText = saveBtn.innerHTML;
-  
-  saveBtn.disabled = true;
-  cancelBtn.disabled = true;
-  closeBtn.disabled = true;
-  inputEl.disabled = true;
-  document.getElementById("build-description").disabled = true;
-  
-  saveBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Đang lưu...';
-
-  try {
-    // Send POST request to API
-    const response = await fetch(`${API_BASE_URL}/builds`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await response.json();
-
-    // Handle different response codes
-    if (response.ok && (response.status === 200 || response.status === 201)) {
-      // Success (code 1000 expected from backend)
-      closeSaveBuildModal();
-      showToast(
-        "Thành công",
-        "✅ Lưu cấu hình thành công!",
-        false
-      );
-      
-      // Optional: Redirect to user builds page after 2 seconds
-      // setTimeout(() => {
-      //   window.location.href = "my-builds.html";
-      // }, 2000);
-      
-    } else {
-      // Handle error codes from backend
-      const errorCode = result.code;
-      let errorMessage = "❌ Có lỗi xảy ra, vui lòng thử lại";
-      
-      switch (errorCode) {
-        case 5001:
-          errorMessage = "❌ Tên cấu hình không được để trống";
-          break;
-        case 5002:
-          errorMessage = "❌ Phải chọn ít nhất một linh kiện";
-          break;
-        case 5003:
-          errorMessage = "❌ UUID linh kiện không hợp lệ";
-          break;
-        case 1006: // Unauthorized (token invalid/expired)
-          errorMessage = "⚠️ Phiên đăng nhập hết hạn, vui lòng đăng nhập lại";
-          closeSaveBuildModal();
-          setTimeout(() => {
-            localStorage.removeItem("jwt_token");
-            localStorage.removeItem("token");
-            window.location.href = "index.html?redirect=build_pc.html";
-          }, 2000);
-          break;
-        default:
-          errorMessage = result.message || "❌ Có lỗi xảy ra, vui lòng thử lại";
-      }
-      
-      showToast(
-        "Lỗi",
-        errorMessage,
-        true
-      );
-    }
-  } catch (error) {
-    console.error("Save build error:", error);
-    showToast(
-      "Lỗi kết nối",
-      "❌ Không thể kết nối đến server, vui lòng thử lại",
-      true
-    );
-  } finally {
-    // Reset button and form state
-    saveBtn.disabled = false;
-    cancelBtn.disabled = false;
-    closeBtn.disabled = false;
-    inputEl.disabled = false;
-    document.getElementById("build-description").disabled = false;
-    saveBtn.innerHTML = originalText;
-  }
 }
 
