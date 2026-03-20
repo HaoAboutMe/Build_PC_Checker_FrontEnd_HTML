@@ -4,7 +4,7 @@
 
 Document này cung cấp đầy đủ thông tin về các API endpoint CRUD cho PC Parts để phát triển giao diện Frontend.
 
-**Base URL:** `http://localhost:8080/identity/`
+**Base URL:** `/identity/`
 
 **Authentication:** Bearer Token (JWT) trong header `Authorization`
 
@@ -1517,7 +1517,7 @@ Sử dụng endpoint authentication đã có sẵn để lấy token:
 
 ```typescript
 // api/config.ts
-export const API_BASE_URL = "http://localhost:8080";
+export const API_BASE_URL = "20.194.26.75:8080";
 
 export const getAuthHeaders = () => ({
   "Content-Type": "application/json",

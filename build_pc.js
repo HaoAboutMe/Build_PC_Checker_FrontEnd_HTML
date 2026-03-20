@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = "http://localhost:8080/identity";
+const API_BASE_URL = "/identity";
 
 // Global State
 const buildState = {
@@ -91,12 +91,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("reset-build-btn")
     .addEventListener("click", resetBuild);
-  
+
   // Update Save Build button state on page load
   updateSaveBuildButtonState();
 
   // Bottleneck check trigger
-  document.getElementById("check-bottleneck-btn").addEventListener("click", analyzeBottleneck);
+  document
+    .getElementById("check-bottleneck-btn")
+    .addEventListener("click", analyzeBottleneck);
 });
 
 // Setup Initial Slots
@@ -218,14 +220,14 @@ function setupModalEvents() {
   document
     .getElementById("confirm-save-build-btn")
     .addEventListener("click", handleSaveBuild);
-  
+
   // Character counter for description
   const descriptionInput = document.getElementById("build-description");
   const charCountSpan = document.getElementById("desc-char-count");
   descriptionInput.addEventListener("input", () => {
     charCountSpan.textContent = descriptionInput.value.length;
   });
-  
+
   // Real-time validation for build name
   const buildNameInput = document.getElementById("build-name");
   buildNameInput.addEventListener("input", () => {
@@ -235,7 +237,7 @@ function setupModalEvents() {
       buildNameInput.classList.remove("error");
     }
   });
-  
+
   // Keyboard support - ESC to close modal
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
@@ -568,7 +570,7 @@ function selectPart(item) {
 
   // Trigger compatibility check (keep it automatic)
   checkCompatibility();
-  
+
   // Reset bottleneck results when component changed
   hideBottleneckResults();
 }
@@ -589,7 +591,7 @@ function removePart(compId) {
   updateSaveBuildButtonState();
 
   checkCompatibility();
-  
+
   // Reset bottleneck results when part removed
   hideBottleneckResults();
 }
@@ -598,7 +600,7 @@ function resetBuild() {
   componentsConfig.forEach((comp) => {
     removePart(comp.id);
   });
-  
+
   // Update Save Build button state after reset
   updateSaveBuildButtonState();
 }
@@ -743,10 +745,22 @@ document.getElementById("toast-close")?.addEventListener("click", () => {
 
 // Balance status configuration for bottleneck analysis
 const BALANCE_STATUS_CONFIG = {
-  'Excellent Balance': { class: 'excellent', progressColor: 'linear-gradient(90deg, #10b981, #059669)' },
-  'Good Balance': { class: 'good', progressColor: 'linear-gradient(90deg, #3b82f6, #2563eb)' },
-  'Minor Bottleneck': { class: 'minor', progressColor: 'linear-gradient(90deg, #f59e0b, #d97706)' },
-  'Significant Bottleneck': { class: 'significant', progressColor: 'linear-gradient(90deg, #ef4444, #dc2626)' }
+  "Excellent Balance": {
+    class: "excellent",
+    progressColor: "linear-gradient(90deg, #10b981, #059669)",
+  },
+  "Good Balance": {
+    class: "good",
+    progressColor: "linear-gradient(90deg, #3b82f6, #2563eb)",
+  },
+  "Minor Bottleneck": {
+    class: "minor",
+    progressColor: "linear-gradient(90deg, #f59e0b, #d97706)",
+  },
+  "Significant Bottleneck": {
+    class: "significant",
+    progressColor: "linear-gradient(90deg, #ef4444, #dc2626)",
+  },
 };
 
 /**
@@ -754,7 +768,12 @@ const BALANCE_STATUS_CONFIG = {
  * @returns {boolean}
  */
 function hasBottleneckRequiredParts() {
-  return buildState.cpuId && buildState.vgaId && buildState.ramId && buildState.ssdIds.length > 0;
+  return (
+    buildState.cpuId &&
+    buildState.vgaId &&
+    buildState.ramId &&
+    buildState.ssdIds.length > 0
+  );
 }
 
 /**
@@ -762,9 +781,13 @@ function hasBottleneckRequiredParts() {
  */
 async function analyzeBottleneck() {
   const btn = document.getElementById("check-bottleneck-btn");
-  
+
   if (!buildState.cpuId || !buildState.vgaId) {
-    showToast("Thiếu linh kiện", "⚠️ Cần chọn ít nhất CPU và VGA để phân tích Bottleneck", true);
+    showToast(
+      "Thiếu linh kiện",
+      "⚠️ Cần chọn ít nhất CPU và VGA để phân tích Bottleneck",
+      true,
+    );
     return;
   }
 
@@ -775,7 +798,7 @@ async function analyzeBottleneck() {
   const payload = {
     cpuId: buildState.cpuId,
     vgaId: buildState.vgaId,
-    gpuId: buildState.vgaId
+    gpuId: buildState.vgaId,
   };
 
   try {
@@ -784,7 +807,11 @@ async function analyzeBottleneck() {
     if (res && res.code === 1000 && res.result) {
       displayBottleneckResults(res.result);
     } else {
-      showToast("Lỗi", (res && res.message) ? res.message : "Dữ liệu phân tích không hợp lệ", true);
+      showToast(
+        "Lỗi",
+        res && res.message ? res.message : "Dữ liệu phân tích không hợp lệ",
+        true,
+      );
       hideBottleneckResults();
     }
   } catch (error) {
@@ -814,16 +841,19 @@ function displayBottleneckResults(result) {
   const updateRes = (id, data) => {
     const el = document.getElementById(id);
     if (!el) return;
-    
+
     const severityMap = {
-      "NONE": { text: "Cân bằng", color: "#38a169" },
-      "LOW": { text: "Nghẽn nhẹ", color: "#81e6d9" },
-      "MEDIUM": { text: "Nghẽn vừa", color: "#dd6b20" },
-      "HIGH": { text: "Nghẽn nặng", color: "#e53e3e" }
+      NONE: { text: "Cân bằng", color: "#38a169" },
+      LOW: { text: "Nghẽn nhẹ", color: "#81e6d9" },
+      MEDIUM: { text: "Nghẽn vừa", color: "#dd6b20" },
+      HIGH: { text: "Nghẽn nặng", color: "#e53e3e" },
     };
 
     const severity = (data.severity || "NONE").toUpperCase();
-    const config = severityMap[severity] || { text: severity, color: "#a0aec0" };
+    const config = severityMap[severity] || {
+      text: severity,
+      color: "#a0aec0",
+    };
 
     el.textContent = config.text;
     el.style.color = config.color;
@@ -838,13 +868,13 @@ function displayBottleneckResults(result) {
   // Hide Wattage as it's not in this response structure
   const wattageSection = document.getElementById("bottleneck-wattage-item");
   if (wattageSection) {
-      wattageSection.style.display = "none";
+    wattageSection.style.display = "none";
   }
 
   // Update Message (all resolutions)
   const msgEl = document.getElementById("bottleneck-message");
   if (msgEl) {
-      msgEl.innerHTML = `
+    msgEl.innerHTML = `
           <div style="margin-bottom: 0.5rem;"><strong style="color: var(--primary-color);">1080P:</strong> ${res1080.message || "Không có dữ liệu"}</div>
           <div style="margin-bottom: 0.5rem;"><strong style="color: var(--primary-color);">2K:</strong> ${res2k.message || "Không có dữ liệu"}</div>
           <div><strong style="color: var(--primary-color);">4K:</strong> ${res4k.message || "Không có dữ liệu"}</div>
@@ -872,15 +902,17 @@ function hideBottleneckResults() {
  */
 function hasRequiredParts() {
   // Return true if any part is selected
-  return buildState.cpuId || 
-         buildState.mainboardId || 
-         buildState.ramId || 
-         buildState.vgaId || 
-         buildState.psuId || 
-         buildState.caseId || 
-         buildState.coolerId || 
-         buildState.ssdIds.length > 0 || 
-         buildState.hddIds.length > 0;
+  return (
+    buildState.cpuId ||
+    buildState.mainboardId ||
+    buildState.ramId ||
+    buildState.vgaId ||
+    buildState.psuId ||
+    buildState.caseId ||
+    buildState.coolerId ||
+    buildState.ssdIds.length > 0 ||
+    buildState.hddIds.length > 0
+  );
 }
 
 /**
@@ -889,7 +921,7 @@ function hasRequiredParts() {
 function updateSaveBuildButtonState() {
   const saveBtn = document.getElementById("save-build-btn");
   if (!saveBtn) return;
-  
+
   if (hasRequiredParts()) {
     saveBtn.disabled = false;
     saveBtn.title = "Lưu cấu hình hiện tại";
@@ -914,23 +946,19 @@ async function openSaveBuildModal() {
   // Check JWT token first
   const token = getJWTToken();
   if (!token) {
-    showToast(
-      "Chưa đăng nhập",
-      "⚠️ Vui lòng đăng nhập để lưu cấu hình",
-      true
-    );
+    showToast("Chưa đăng nhập", "⚠️ Vui lòng đăng nhập để lưu cấu hình", true);
     setTimeout(() => {
       window.location.href = "index.html?redirect=build_pc.html";
     }, 2000);
     return;
   }
-  
+
   // Check required parts (Client side validation)
   if (!hasRequiredParts()) {
     showToast(
       "Thiếu linh kiện",
       "⚠️ Vui lòng chọn ít nhất CPU, Mainboard và RAM",
-      true
+      true,
     );
     return;
   }
@@ -939,20 +967,25 @@ async function openSaveBuildModal() {
   const saveBtn = document.getElementById("save-build-btn");
   const originalHtml = saveBtn.innerHTML;
   saveBtn.disabled = true;
-  saveBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Đang kiểm tra...';
+  saveBtn.innerHTML =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Đang kiểm tra...';
 
   try {
     const payload = buildPayloadForCheck();
     const response = await fetch(`${API_BASE_URL}/builds/check-compatibility`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     const resData = await response.json();
-    
+
     // Check if compatible
-    if (resData.code === 1000 && resData.result && resData.result.compatible === true) {
+    if (
+      resData.code === 1000 &&
+      resData.result &&
+      resData.result.compatible === true
+    ) {
       // 2. IF COMPATIBLE -> OPEN NAME INPUT MODAL
       document.getElementById("build-name").value = "";
       document.getElementById("build-description").value = "";
@@ -962,18 +995,24 @@ async function openSaveBuildModal() {
 
       const modal = document.getElementById("save-build-modal");
       modal.classList.add("active");
-      
+
       setTimeout(() => {
         document.getElementById("build-name").focus();
       }, 100);
     } else {
       // 3. IF NOT COMPATIBLE -> SHOW ERROR MODAL
-      const errors = resData.result ? resData.result.errors : ["Có lỗi không xác định xảy ra"];
+      const errors = resData.result
+        ? resData.result.errors
+        : ["Có lỗi không xác định xảy ra"];
       showCompatErrorModal(errors);
     }
   } catch (error) {
     console.error("Compatibility check error:", error);
-    showToast("Lỗi", "❌ Không thể kiểm tra tương thích, vui lòng thử lại sau.", true);
+    showToast(
+      "Lỗi",
+      "❌ Không thể kiểm tra tương thích, vui lòng thử lại sau.",
+      true,
+    );
   } finally {
     saveBtn.disabled = false;
     saveBtn.innerHTML = originalHtml;
@@ -985,7 +1024,9 @@ async function openSaveBuildModal() {
  */
 async function handleSaveBuild() {
   const buildName = document.getElementById("build-name").value.trim();
-  const buildDescription = document.getElementById("build-description").value.trim();
+  const buildDescription = document
+    .getElementById("build-description")
+    .value.trim();
   const errorEl = document.getElementById("build-name-error");
   const inputEl = document.getElementById("build-name");
 
@@ -1002,22 +1043,23 @@ async function handleSaveBuild() {
   const payload = {
     name: buildName,
     description: buildDescription || undefined,
-    parts: selectedParts
+    parts: selectedParts,
   };
 
   const saveBtn = document.getElementById("confirm-save-build-btn");
   const originalText = saveBtn.innerHTML;
   saveBtn.disabled = true;
-  saveBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Đang lưu...';
+  saveBtn.innerHTML =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Đang lưu...';
 
   try {
     const response = await fetch(`${API_BASE_URL}/builds`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();
@@ -1029,14 +1071,23 @@ async function handleSaveBuild() {
         window.location.href = "my-builds.html"; // Chuyển hướng về trang My Builds
       }, 1500);
     } else if (result.code === 5004) {
-      errorEl.textContent = "Tên cấu hình này đã tồn tại trong tài khoản của bạn. Vui lòng chọn một tên khác!";
+      errorEl.textContent =
+        "Tên cấu hình này đã tồn tại trong tài khoản của bạn. Vui lòng chọn một tên khác!";
       errorEl.style.display = "block";
       inputEl.classList.add("error");
     } else if (result.code === 5005) {
       closeSaveBuildModal();
-      showToast("Lỗi", "❌ Cấu hình PC không hợp lệ hoặc đã xảy ra xung đột. Vui lòng kiểm tra lại.", true);
+      showToast(
+        "Lỗi",
+        "❌ Cấu hình PC không hợp lệ hoặc đã xảy ra xung đột. Vui lòng kiểm tra lại.",
+        true,
+      );
     } else {
-      showToast("Lỗi", result.message || "❌ Có lỗi xảy ra, vui lòng thử lại", true);
+      showToast(
+        "Lỗi",
+        result.message || "❌ Có lỗi xảy ra, vui lòng thử lại",
+        true,
+      );
     }
   } catch (error) {
     showToast("Lỗi kết nối", "❌ Không thể kết nối đến server", true);
@@ -1068,7 +1119,7 @@ function buildPayloadForCheck() {
  */
 function showCompatErrorModal(errors) {
   const listEl = document.getElementById("compat-error-list");
-  listEl.innerHTML = errors.map(err => `<li>${err}</li>`).join("");
+  listEl.innerHTML = errors.map((err) => `<li>${err}</li>`).join("");
   document.getElementById("compat-error-modal").classList.add("active");
 }
 
@@ -1098,8 +1149,9 @@ function buildSelectedParts() {
   if (buildState.psuId) selectedParts.psu = buildState.psuId;
   if (buildState.caseId) selectedParts.case = buildState.caseId;
   if (buildState.coolerId) selectedParts.cooler = buildState.coolerId;
-  if (buildState.ssdIds && buildState.ssdIds.length > 0) selectedParts.ssd = buildState.ssdIds[0];
-  if (buildState.hddIds && buildState.hddIds.length > 0) selectedParts.hdd = buildState.hddIds[0];
+  if (buildState.ssdIds && buildState.ssdIds.length > 0)
+    selectedParts.ssd = buildState.ssdIds[0];
+  if (buildState.hddIds && buildState.hddIds.length > 0)
+    selectedParts.hdd = buildState.hddIds[0];
   return selectedParts;
 }
-

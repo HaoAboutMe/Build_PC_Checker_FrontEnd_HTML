@@ -564,7 +564,7 @@ function onComponentChange() {
 API này được document đầy đủ trên Swagger UI:
 
 ```
-http://localhost:8080/swagger-ui/index.html
+/swagger-ui/index.html
 ```
 
 Tìm kiếm: **"Build Controller"** hoặc **/builds/check-compatibility**
@@ -574,8 +574,8 @@ Tìm kiếm: **"Build Controller"** hoặc **/builds/check-compatibility**
 ## 📞 Liên hệ & Hỗ trợ
 
 - **Project Repository:** [GitHub Link]
-- **API Base URL:** `http://localhost:8080`
-- **Swagger UI:** `http://localhost:8080/swagger-ui/index.html`
+- **API Base URL:** `20.194.26.75:8080`
+- **Swagger UI:** `/swagger-ui/index.html`
 
 ---
 

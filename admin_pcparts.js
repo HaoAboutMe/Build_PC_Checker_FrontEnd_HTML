@@ -1,6 +1,6 @@
 // admin_pcparts.js
 
-const API_BASE_URL = "http://localhost:8080/identity";
+const API_BASE_URL = "/identity";
 
 // Entities Map
 const ENTITIES = {
