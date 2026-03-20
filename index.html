@@ -92,7 +92,106 @@
                         <span class="btn-text">Đăng nhập</span>
                         <span class="btn-loader"></span>
                     </button>
+                    <div class="auth-footer" style="margin-top: 1rem; text-align: right;">
+                        <a href="#" class="forgot-password-link" id="forgot-password-link" style="color: var(--primary-color); font-size: 0.875rem; font-weight: 500; text-decoration: none;">Quên mật khẩu?</a>
+                    </div>
                 </form>
+
+                <!-- Forgot Password Form (Step 1: Request OTP) -->
+                <form class="auth-form" id="forgot-password-form">
+                    <div class="auth-form-header" style="margin-bottom: 2rem;">
+                        <button type="button" class="back-link" id="back-to-login-forgot" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; padding: 0; margin-bottom: 1rem;">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M15.8333 10H4.16667M4.16667 10L10 15.8333M4.16667 10L10 4.16667"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Quay lại đăng nhập
+                        </button>
+                        <h2 class="form-title" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Quên mật khẩu</h2>
+                        <p class="form-subtitle" style="color: var(--text-secondary); font-size: 0.9rem;">Nhập email của bạn để nhận mã xác thực OTP</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="forgot-email">Email</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M3.33333 5.83333L10 10.8333L16.6667 5.83333M3.33333 14.1667H16.6667C17.5871 14.1667 18.3333 13.4205 18.3333 12.5V5.83333C18.3333 4.91286 17.5871 4.16667 16.6667 4.16667H3.33333C2.41286 4.16667 1.66667 4.91286 1.66667 5.83333V12.5C1.66667 13.4205 2.41286 14.1667 3.33333 14.1667Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <input type="email" id="forgot-email" placeholder="your@email.com" required>
+                        </div>
+                        <span class="error-message" id="forgot-email-error"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="forgot-password-btn">
+                        <span class="btn-text">Gửi mã OTP</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </form>
+
+                <!-- Reset Password Form (Step 2: Enter OTP & New Password) -->
+                <form class="auth-form" id="reset-password-form">
+                    <div class="auth-form-header" style="margin-bottom: 2rem;">
+                        <button type="button" class="back-link" id="back-to-forgot" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; padding: 0; margin-bottom: 1rem;">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M15.8333 10H4.16667M4.16667 10L10 15.8333M4.16667 10L10 4.16667"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Quay lại
+                        </button>
+                        <h2 class="form-title" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Đặt lại mật khẩu</h2>
+                        <p class="form-subtitle" style="color: var(--text-secondary); font-size: 0.9rem;">Sử dụng mã OTP đã được gửi đến email của bạn</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reset-email">Email</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M3.33333 5.83333L10 10.8333L16.6667 5.83333M3.33333 14.1667H16.6667C17.5871 14.1667 18.3333 13.4205 18.3333 12.5V5.83333C18.3333 4.91286 17.5871 4.16667 16.6667 4.16667H3.33333C2.41286 4.16667 1.66667 4.91286 1.66667 5.83333V12.5C1.66667 13.4205 2.41286 14.1667 3.33333 14.1667Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <input type="email" id="reset-email" readonly style="background-color: var(--bg-tertiary); cursor: not-allowed;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reset-otp">Mã OTP</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M10 11.6667V13.3333M7.5 16.6667H12.5M10 3.33333C8.15905 3.33333 6.66667 4.82572 6.66667 6.66667V10C6.66667 11.841 8.15905 13.3333 10 13.3333C11.841 13.3333 13.3333 11.841 13.3333 10V6.66667C13.3333 4.82572 11.841 3.33333 10 3.33333Z" 
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <input type="text" id="reset-otp" placeholder="Nhập mã OTP" required>
+                        </div>
+                        <span class="error-message" id="reset-otp-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reset-password">Mật khẩu mới</label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M5.83333 9.16667V5.83333C5.83333 3.53215 7.69881 1.66667 10 1.66667C12.3012 1.66667 14.1667 3.53215 14.1667 5.83333V9.16667M10 12.5V14.1667M6.66667 18.3333H13.3333C14.2538 18.3333 15 17.5871 15 16.6667V10.8333C15 9.91286 14.2538 9.16667 13.3333 9.16667H6.66667C5.74619 9.16667 5 9.91286 5 10.8333V16.6667C5 17.5871 5.74619 18.3333 6.66667 18.3333Z"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <input type="password" id="reset-password" placeholder="Tối thiểu 8 ký tự" required>
+                        </div>
+                        <span class="error-message" id="reset-password-error"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="reset-password-btn">
+                        <span class="btn-text">Đặt lại mật khẩu</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </form>
+
 
                 <!-- Register Form -->
                 <form class="auth-form" id="register-form">

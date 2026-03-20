@@ -17,6 +17,7 @@ const ERROR_MESSAGES = {
     1007: 'Chưa đăng nhập hoặc token không hợp lệ',
     1008: 'Bạn không có quyền truy cập',
     1009: 'Tuổi không đủ yêu cầu (tối thiểu 5 tuổi)',
+    1014: 'Mã OTP sai hoặc hết hạn',
     9999: 'Lỗi không xác định'
 };
 
@@ -40,6 +41,21 @@ const elements = {
     loginEmail: document.getElementById('login-email'),
     loginPassword: document.getElementById('login-password'),
     loginBtn: document.getElementById('login-btn'),
+    forgotPasswordLink: document.getElementById('forgot-password-link'),
+    
+    // Forgot password inputs
+    forgotPasswordForm: document.getElementById('forgot-password-form'),
+    forgotEmail: document.getElementById('forgot-email'),
+    forgotPasswordBtn: document.getElementById('forgot-password-btn'),
+    backToLoginForgot: document.getElementById('back-to-login-forgot'),
+    
+    // Reset password inputs
+    resetPasswordForm: document.getElementById('reset-password-form'),
+    resetEmail: document.getElementById('reset-email'),
+    resetOtp: document.getElementById('reset-otp'),
+    resetNewPassword: document.getElementById('reset-password'),
+    resetPasswordBtn: document.getElementById('reset-password-btn'),
+    backToForgot: document.getElementById('back-to-forgot'),
     
     // Register inputs
     registerFirstname: document.getElementById('register-firstname'),
@@ -520,6 +536,26 @@ async function loginUser(email, password) {
 }
 
 /**
+ * Request OTP for forgot password
+ */
+async function forgotPassword(email) {
+    return await apiCall('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email })
+    });
+}
+
+/**
+ * Reset password using OTP
+ */
+async function resetPasswordUsingOTP(email, otp, newPassword) {
+    return await apiCall('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ email, otp, newPassword })
+    });
+}
+
+/**
  * Get current user info
  */
 async function getMyInfo() {
@@ -818,17 +854,84 @@ function switchAdminTab(tabName) {
  * Switch between login and register tabs
  */
 function switchTab(tabName) {
-    // Update tab buttons
-    elements.loginTab.classList.toggle('active', tabName === 'login');
-    elements.registerTab.classList.toggle('active', tabName === 'register');
+    const loginTab = document.getElementById('login-tab');
+    const registerTab = document.getElementById('register-tab');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const forgotForm = document.getElementById('forgot-password-form');
+    const resetForm = document.getElementById('reset-password-form');
+    const tabSwitcher = document.querySelector('.tab-switcher');
     
-    // Update forms
-    elements.loginForm.classList.toggle('active', tabName === 'login');
-    elements.registerForm.classList.toggle('active', tabName === 'register');
+    if (loginTab) loginTab.classList.toggle('active', tabName === 'login');
+    if (registerTab) registerTab.classList.toggle('active', tabName === 'register');
+    
+    if (loginForm) loginForm.classList.toggle('active', tabName === 'login');
+    if (registerForm) registerForm.classList.toggle('active', tabName === 'register');
     
     // Clear all errors
     clearAllErrors('login-form');
     clearAllErrors('register-form');
+    
+    // Hide forgot password forms if they were visible
+    if (forgotForm) forgotForm.classList.remove('active');
+    if (resetForm) resetForm.classList.remove('active');
+    
+    // Show tab switcher
+    if (tabSwitcher) tabSwitcher.style.display = 'flex';
+}
+
+/**
+ * Show forgot password (request OTP)
+ */
+function showForgotPassword() {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const forgotForm = document.getElementById('forgot-password-form');
+    const resetForm = document.getElementById('reset-password-form');
+    const tabSwitcher = document.querySelector('.tab-switcher');
+
+    // Hide other forms
+    if (loginForm) loginForm.classList.remove('active');
+    if (registerForm) registerForm.classList.remove('active');
+    if (resetForm) resetForm.classList.remove('active');
+    
+    // Show forgot password form
+    if (forgotForm) forgotForm.classList.add('active');
+    
+    // Hide tab switcher
+    if (tabSwitcher) tabSwitcher.style.display = 'none';
+    
+    // Clear errors
+    clearAllErrors('forgot-password-form');
+}
+
+/**
+ * Show reset password (enter OTP and new password)
+ */
+function showResetPassword(email) {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const forgotForm = document.getElementById('forgot-password-form');
+    const resetForm = document.getElementById('reset-password-form');
+    const resetEmailInput = document.getElementById('reset-email');
+    const tabSwitcher = document.querySelector('.tab-switcher');
+
+    // Hide other forms
+    if (loginForm) loginForm.classList.remove('active');
+    if (registerForm) registerForm.classList.remove('active');
+    if (forgotForm) forgotForm.classList.remove('active');
+    
+    // Show reset password form
+    if (resetForm) resetForm.classList.add('active');
+    
+    // Set email
+    if (resetEmailInput) resetEmailInput.value = email;
+    
+    // Hide tab switcher
+    if (tabSwitcher) tabSwitcher.style.display = 'none';
+    
+    // Clear errors
+    clearAllErrors('reset-password-form');
 }
 
 // Store current user data globally
@@ -877,13 +980,19 @@ function showUserInfo(userData) {
  * Show auth section
  */
 function showAuthSection() {
-    elements.authSection.style.display = 'block';
-    elements.infoSection.classList.remove('active');
-    elements.adminSection.classList.remove('active');
+    const authSect = document.getElementById('auth-section');
+    const infoSect = document.getElementById('info-section');
+    const adminSect = document.getElementById('admin-section');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+
+    if (authSect) authSect.style.display = 'block';
+    if (infoSect) infoSect.classList.remove('active');
+    if (adminSect) adminSect.classList.remove('active');
     
     // Reset forms
-    elements.loginForm.reset();
-    elements.registerForm.reset();
+    if (loginForm) loginForm.reset();
+    if (registerForm) registerForm.reset();
     clearAllErrors('login-form');
     clearAllErrors('register-form');
     
@@ -1309,6 +1418,14 @@ function handleApiError(response, formType = 'login') {
             }
             break;
             
+        case 1014: // Invalid OTP
+            if (formType === 'reset-password') {
+                showError('reset-otp', message);
+            } else {
+                showToast('Lỗi', message, 'error');
+            }
+            break;
+            
         default:
             showToast('Lỗi', message, 'error');
     }
@@ -1719,6 +1836,96 @@ async function handleDeletePermission(permissionName) {
 }
 
 /**
+ * Handle forgot password flow (Step 1: Request OTP)
+ */
+async function handleForgotPassword(event) {
+    event.preventDefault();
+    
+    const emailInput = document.getElementById('forgot-email');
+    const submitBtn = document.getElementById('forgot-password-btn');
+    const email = emailInput ? emailInput.value.trim() : '';
+    
+    if (!email) {
+        showError('forgot-email', 'Vui lòng nhập email');
+        return;
+    }
+    
+    if (!validateEmail(email)) {
+        showError('forgot-email', 'Email không đúng định dạng');
+        return;
+    }
+    
+    if (submitBtn) setButtonLoading(submitBtn, true);
+    
+    try {
+        const response = await forgotPassword(email);
+        
+        if (response.code === 1000) {
+            showToast('Thành công', 'Mã OTP đã được gửi đến email của bạn', 'success');
+            showResetPassword(email);
+        } else {
+            handleApiError(response, 'forgot-password');
+        }
+    } catch (error) {
+        showToast('Lỗi kết nối', error.message, 'error');
+    } finally {
+        if (submitBtn) setButtonLoading(submitBtn, false);
+    }
+}
+
+/**
+ * Handle reset password flow (Step 2: Reset with OTP)
+ */
+async function handleResetPassword(event) {
+    event.preventDefault();
+    
+    const emailInput = document.getElementById('reset-email');
+    const otpInput = document.getElementById('reset-otp');
+    const passwordInput = document.getElementById('reset-password');
+    const submitBtn = document.getElementById('reset-password-btn');
+    
+    const email = emailInput ? emailInput.value : '';
+    const otp = otpInput ? otpInput.value.trim() : '';
+    const newPassword = passwordInput ? passwordInput.value : '';
+    
+    clearAllErrors('reset-password-form');
+    
+    let isValid = true;
+    
+    if (!otp) {
+        showError('reset-otp', 'Vui lòng nhập mã OTP');
+        isValid = false;
+    }
+    
+    if (!newPassword) {
+        showError('reset-password', 'Vui lòng nhập mật khẩu mới');
+        isValid = false;
+    } else if (!validatePassword(newPassword)) {
+        showError('reset-password', 'Mật khẩu phải có ít nhất 8 ký tự');
+        isValid = false;
+    }
+    
+    if (!isValid) return;
+    
+    if (submitBtn) setButtonLoading(submitBtn, true);
+    
+    try {
+        const response = await resetPasswordUsingOTP(email, otp, newPassword);
+        
+        if (response.code === 1000) {
+            showToast('Thành công', 'Mật khẩu của bạn đã được đặt lại. Vui lòng đăng nhập.', 'success');
+            showAuthSection(); // Switch back to login
+        } else {
+            handleApiError(response, 'reset-password');
+        }
+    } catch (error) {
+        showToast('Lỗi kết nối', error.message, 'error');
+    } finally {
+        if (submitBtn) setButtonLoading(submitBtn, false);
+    }
+}
+
+/**
  * Check if user is already logged in
  */
 async function checkAuth() {
@@ -1756,6 +1963,41 @@ elements.registerTab.addEventListener('click', () => switchTab('register'));
 // Form submissions
 elements.loginForm.addEventListener('submit', handleLogin);
 elements.registerForm.addEventListener('submit', handleRegister);
+
+// Forgot Password flow
+const forgotLink = document.getElementById('forgot-password-link');
+if (forgotLink) {
+    forgotLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showForgotPassword();
+    });
+}
+
+const backToLoginForgot = document.getElementById('back-to-login-forgot');
+if (backToLoginForgot) {
+    backToLoginForgot.addEventListener('click', (e) => {
+        e.preventDefault();
+        showAuthSection();
+    });
+}
+
+const backToForgot = document.getElementById('back-to-forgot');
+if (backToForgot) {
+    backToForgot.addEventListener('click', (e) => {
+        e.preventDefault();
+        showForgotPassword();
+    });
+}
+
+const forgotForm = document.getElementById('forgot-password-form');
+if (forgotForm) {
+    forgotForm.addEventListener('submit', handleForgotPassword);
+}
+
+const resetForm = document.getElementById('reset-password-form');
+if (resetForm) {
+    resetForm.addEventListener('submit', handleResetPassword);
+}
 
 // Logout
 elements.logoutBtn.addEventListener('click', handleLogout);
