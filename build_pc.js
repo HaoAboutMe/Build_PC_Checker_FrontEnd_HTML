@@ -12,6 +12,7 @@ const buildState = {
   psuId: null,
   caseId: null,
   coolerId: null,
+  selectedGame: null,
 };
 
 // Component Definitions
@@ -97,6 +98,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Bottleneck check trigger
   document.getElementById("check-bottleneck-btn").addEventListener("click", analyzeBottleneck);
+
+  // Game Feature Events
+  setupGameEvents();
 });
 
 // Setup Initial Slots
@@ -738,8 +742,308 @@ document.getElementById("toast-close")?.addEventListener("click", () => {
 });
 
 // ===================================
-// BOTTLENECK ANALYSIS FEATURE
+// GAME COMPATIBILITY & FPS FEATURE
 // ===================================
+
+let allGamesData = [];
+let gameCurrentPage = 1;
+const GAME_ITEMS_PER_PAGE = 12;
+let gameFilteredItems = [];
+let fpsResolution = "1080p";
+
+function setupGameEvents() {
+  document.getElementById("view-game-list-btn").addEventListener("click", openGamePicker);
+  document.getElementById("check-all-games-btn").addEventListener("click", checkAllGamesCompatibility);
+  document.getElementById("close-game-picker-btn").addEventListener("click", closeGamePicker);
+  document.getElementById("game-picker-overlay").addEventListener("click", closeGamePicker);
+  
+  document.getElementById("game-picker-search").addEventListener("input", (e) => filterGames(e.target.value));
+  document.getElementById("game-page-prev").addEventListener("click", () => {
+    if (gameCurrentPage > 1) { gameCurrentPage--; renderGamePage(); }
+  });
+  document.getElementById("game-page-next").addEventListener("click", () => {
+    const total = Math.ceil(gameFilteredItems.length / GAME_ITEMS_PER_PAGE) || 1;
+    if (gameCurrentPage < total) { gameCurrentPage++; renderGamePage(); }
+  });
+
+  document.getElementById("remove-selected-game").addEventListener("click", removeSelectedGame);
+  document.getElementById("check-single-game-btn").addEventListener("click", checkSingleGameCompatibility);
+  document.getElementById("estimate-fps-btn").addEventListener("click", openFpsModal);
+  
+  document.getElementById("close-fps-btn").addEventListener("click", closeFpsModal);
+  document.getElementById("fps-overlay").addEventListener("click", closeFpsModal);
+  
+  document.querySelectorAll(".resolution-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      document.querySelectorAll(".resolution-btn").forEach(b => b.classList.remove("btn-primary"));
+      btn.classList.add("btn-primary");
+      fpsResolution = btn.dataset.res;
+      if (buildState.selectedGame) {
+        calculateFps();
+      }
+    });
+  });
+
+  document.getElementById("close-game-compat-list-btn").addEventListener("click", () => {
+    document.getElementById("game-compat-list-modal").classList.remove("active");
+  });
+  document.getElementById("game-compat-list-overlay").addEventListener("click", () => {
+    document.getElementById("game-compat-list-modal").classList.remove("active");
+  });
+}
+
+async function openGamePicker() {
+  const modal = document.getElementById("game-picker-modal");
+  modal.classList.add("active");
+  
+  if (allGamesData.length === 0) {
+    const listEl = document.getElementById("game-picker-items");
+    listEl.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;">Đang tải danh sách game...</div>';
+    
+    const res = await apiCall("/games?size=100"); // Load a decent amount
+    if (res.result) {
+      // Robust extraction: Handle PageResponse { content: [...] }, { data: [...] }, or direct array
+      if (res.result.content && Array.isArray(res.result.content)) {
+        allGamesData = res.result.content;
+      } else if (res.result.data && Array.isArray(res.result.data)) {
+        allGamesData = res.result.data;
+      } else if (Array.isArray(res.result)) {
+        allGamesData = res.result;
+      }
+    }
+
+    if (allGamesData.length > 0) {
+      // success
+    } else {
+      console.warn("No games data found or fetch failed:", res);
+      listEl.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--danger-color);">Không thể tải danh sách game.</div>';
+      return;
+    }
+  }
+  
+  gameFilteredItems = allGamesData;
+  gameCurrentPage = 1;
+  renderGamePage();
+}
+
+function closeGamePicker() {
+  document.getElementById("game-picker-modal").classList.remove("active");
+}
+
+function filterGames(query) {
+  const q = query.toLowerCase().trim();
+  gameFilteredItems = allGamesData.filter(g => g.name.toLowerCase().includes(q));
+  gameCurrentPage = 1;
+  renderGamePage();
+}
+
+function renderGamePage() {
+  const listEl = document.getElementById("game-picker-items");
+  listEl.innerHTML = "";
+  
+  const startIndex = (gameCurrentPage - 1) * GAME_ITEMS_PER_PAGE;
+  const pageItems = gameFilteredItems.slice(startIndex, startIndex + GAME_ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(gameFilteredItems.length / GAME_ITEMS_PER_PAGE) || 1;
+  
+  document.getElementById("game-page-info").innerText = `Trang ${gameCurrentPage} / ${totalPages}`;
+  document.getElementById("game-page-prev").disabled = gameCurrentPage <= 1;
+  document.getElementById("game-page-next").disabled = gameCurrentPage >= totalPages;
+
+  pageItems.forEach(game => {
+    const card = document.createElement("div");
+    card.className = "game-card-item";
+    card.style = "cursor: pointer; background: white; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; transition: all 0.2s; display: flex; flex-direction: column;";
+    card.innerHTML = `
+      <img src="${game.coverImageUrl || 'https://via.placeholder.com/150x200?text=No+Cover'}" style="width: 100%; aspect-ratio: 3/4; object-fit: cover;">
+      <div style="padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${game.name}</div>
+        <button class="btn btn-primary" style="font-size: 0.7rem; padding: 4px; width: 100%;">Chọn</button>
+      </div>
+    `;
+    card.onclick = () => selectGame(game);
+    listEl.appendChild(card);
+  });
+}
+
+function selectGame(game) {
+  buildState.selectedGame = game;
+  closeGamePicker();
+  
+  const card = document.getElementById("selected-game-card");
+  card.style.display = "block";
+  document.getElementById("selected-game-img").src = game.coverImageUrl || 'https://via.placeholder.com/60';
+  document.getElementById("selected-game-name").innerText = game.name;
+  document.getElementById("selected-game-status").innerText = "Chưa kiểm tra";
+  document.getElementById("selected-game-status").style.color = "var(--text-secondary)";
+}
+
+function removeSelectedGame() {
+  buildState.selectedGame = null;
+  document.getElementById("selected-game-card").style.display = "none";
+}
+
+async function checkSingleGameCompatibility() {
+  if (!buildState.cpuId || !buildState.vgaId) {
+    showToast("Thiếu linh kiện", "Vui lòng chọn CPU và VGA trước", true);
+    return;
+  }
+  
+  const game = buildState.selectedGame;
+  const statusEl = document.getElementById("selected-game-status");
+  statusEl.innerText = "Đang kiểm tra...";
+  
+  const payload = {
+    cpuId: buildState.cpuId,
+    vgaId: buildState.vgaId,
+    ramId: buildState.ramId
+  };
+  
+  const res = await apiCall(`/games/${game.id}/check-compatibility`, "POST", payload);
+  if (res.code === 1000 && res.result) {
+    const status = res.result.compatibility;
+    statusEl.innerText = res.result.message || status;
+    
+    if (status === "RECOMMENDED") statusEl.style.color = "#10b981";
+    else if (status === "MINIMUM") statusEl.style.color = "#f59e0b";
+    else statusEl.style.color = "#ef4444";
+  } else {
+    statusEl.innerText = "Lỗi kiểm tra";
+    statusEl.style.color = "red";
+  }
+}
+
+async function checkAllGamesCompatibility() {
+  if (!buildState.cpuId || !buildState.vgaId || !buildState.ramId) {
+    showToast("Thiếu linh kiện", "Vui lòng chọn CPU, VGA và RAM để check tất cả", true);
+    return;
+  }
+  
+  const btn = document.getElementById("check-all-games-btn");
+  const originalText = btn.innerText;
+  btn.innerText = "⌛...";
+  btn.disabled = true;
+  
+  const payload = {
+    cpuId: buildState.cpuId,
+    vgaId: buildState.vgaId,
+    ramId: buildState.ramId
+  };
+  
+  try {
+    const res = await apiCall("/games/check-compatible", "POST", payload);
+    if (res.code === 1000 && res.result) {
+      displayAllGamesResults(res.result);
+    } else {
+      showToast("Lỗi", res.message || "Không thể kiểm tra danh sách game", true);
+    }
+  } catch (e) {
+    showToast("Lỗi", "Lỗi mạng hoặc hệ thống", true);
+  } finally {
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }
+}
+
+function displayAllGamesResults(result) {
+  const modal = document.getElementById("game-compat-list-modal");
+  modal.classList.add("active");
+  
+  const summaryEl = document.getElementById("pc-spec-summary");
+  summaryEl.innerHTML = `
+    <div><strong>CPU:</strong> ${result.pcSummary.cpuName} (${result.pcSummary.cpuScore})</div>
+    <div><strong>GPU:</strong> ${result.pcSummary.gpuName} (${result.pcSummary.gpuScore})</div>
+    <div><strong>RAM:</strong> ${result.pcSummary.totalRamGb} GB</div>
+  `;
+  
+  const container = document.getElementById("game-compat-results");
+  container.innerHTML = "";
+  
+  result.results.forEach(g => {
+    let badgeClass = "neutral";
+    if (g.status === "RECOMMENDED") badgeClass = "success";
+    if (g.status === "MINIMUM") badgeClass = "warning";
+    if (g.status === "NOT_SUPPORTED") badgeClass = "error";
+    
+    const row = document.createElement("div");
+    row.style = "display: flex; align-items: center; gap: 15px; padding: 12px; background: white; border: 1px solid var(--border-color); border-radius: 8px;";
+    row.innerHTML = `
+      <img src="${g.coverImageUrl || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover;">
+      <div style="flex: 1;">
+        <div style="font-weight: 700; font-size: 0.9rem;">${g.gameName}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">${g.detail}</div>
+      </div>
+      <div class="pc-chip chip-${badgeClass}" style="margin: 0;">${g.status}</div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function openFpsModal() {
+  if (!buildState.cpuId || !buildState.vgaId) {
+    showToast("Thiếu linh kiện", "Cần chọn CPU và VGA để đo FPS", true);
+    return;
+  }
+  
+  const modal = document.getElementById("fps-modal");
+  modal.classList.add("active");
+  
+  // Set default resolution button
+  document.querySelectorAll(".resolution-btn").forEach(btn => {
+    if (btn.dataset.res === fpsResolution) btn.classList.add("btn-primary");
+    else btn.classList.remove("btn-primary");
+  });
+  
+  calculateFps();
+}
+
+function closeFpsModal() {
+  document.getElementById("fps-modal").classList.remove("active");
+}
+
+async function calculateFps() {
+  const loading = document.getElementById("fps-loading");
+  const results = document.getElementById("fps-result-container");
+  
+  loading.style.display = "block";
+  results.style.display = "none";
+  
+  const payload = {
+    cpuId: buildState.cpuId,
+    vgaId: buildState.vgaId,
+    resolution: fpsResolution
+  };
+  
+  const res = await apiCall(`/games/${buildState.selectedGame.id}/estimate-fps`, "POST", payload);
+  loading.style.display = "none";
+  
+  if (res.code === 1000 && res.result) {
+    results.style.display = "block";
+    const data = res.result;
+    
+    const estimates = document.getElementById("fps-estimates");
+    estimates.innerHTML = `
+      <div class="fps-card" style="text-align: center; padding: 15px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px;">
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">LOW</div>
+        <div style="font-size: 1.5rem; font-weight: 800; color: #10b981;">${data.fpsEstimates.low.estimatedFps}</div>
+        <div style="font-size: 0.65rem; font-weight: 600;">${data.fpsEstimates.low.verdict}</div>
+      </div>
+      <div class="fps-card" style="text-align: center; padding: 15px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px;">
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">MEDIUM</div>
+        <div style="font-size: 1.5rem; font-weight: 800; color: #3b82f6;">${data.fpsEstimates.medium.estimatedFps}</div>
+        <div style="font-size: 0.65rem; font-weight: 600;">${data.fpsEstimates.medium.verdict}</div>
+      </div>
+      <div class="fps-card" style="text-align: center; padding: 15px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px;">
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">HIGH</div>
+        <div style="font-size: 1.5rem; font-weight: 800; color: #f59e0b;">${data.fpsEstimates.high.estimatedFps}</div>
+        <div style="font-size: 0.65rem; font-weight: 600;">${data.fpsEstimates.high.verdict}</div>
+      </div>
+    `;
+    
+    document.getElementById("fps-advice").innerText = data.upgradeAdvice;
+  } else {
+    showToast("Lỗi", "Không thể tính toán FPS", true);
+  }
+}
 
 // Balance status configuration for bottleneck analysis
 const BALANCE_STATUS_CONFIG = {

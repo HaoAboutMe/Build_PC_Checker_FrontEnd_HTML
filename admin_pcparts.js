@@ -83,6 +83,7 @@ const ENTITIES = {
     title: "VGA",
     fields: [
       { k: "name", l: "Tên VGA", t: "text", req: true },
+      { k: "vramGb", l: "VRAM (GB)", t: "number" },
       { k: "lengthMm", l: "Độ dài (mm)", t: "number", req: true },
       { k: "tdp", l: "TDP", t: "number", req: true },
       {
@@ -101,6 +102,30 @@ const ENTITIES = {
       { k: "score", l: "Điểm", t: "number", req: true },
       { k: "imageUrl", l: "URL Hình Ảnh", t: "text" },
       { k: "description", l: "Mô tả", t: "textarea" },
+    ],
+  },
+  game: {
+    url: "/games",
+    title: "Game",
+    fields: [
+      { k: "name", l: "Tên Game", t: "text", req: true },
+      { k: "genre", l: "Thể loại", t: "text" },
+      { k: "coverImageUrl", l: "URL Hình Ảnh", t: "text" },
+      { k: "description", l: "Mô tả", t: "textarea" },
+      { k: "releaseYear", l: "Năm phát hành", t: "number" },
+      { k: "minCpuScore", l: "Điểm CPU Tối thiểu", t: "number", req: true },
+      { k: "minGpuScore", l: "Điểm GPU Tối thiểu", t: "number", req: true },
+      { k: "recCpuScore", l: "Điểm CPU Đề nghị", t: "number", req: true },
+      { k: "recGpuScore", l: "Điểm GPU Đề nghị", t: "number", req: true },
+      { k: "minRamGb", l: "RAM Tối thiểu (GB)", t: "number", req: true },
+      { k: "recRamGb", l: "RAM Đề nghị (GB)", t: "number", req: true },
+      { k: "minVramGb", l: "VRAM Tối thiểu (GB)", t: "number", req: true },
+      { k: "recVramGb", l: "VRAM Đề nghị (GB)", t: "number" },
+      { k: "minStorageGb", l: "Dung lượng Tối thiểu (GB)", t: "number", req: true },
+      { k: "recStorageGb", l: "Dung lượng Đề nghị (GB)", t: "number" },
+      { k: "baseFpsLow", l: "FPS Base Low", t: "number" },
+      { k: "baseFpsMedium", l: "FPS Base Medium", t: "number" },
+      { k: "baseFpsHigh", l: "FPS Base High", t: "number" },
     ],
   },
   psu: {
@@ -501,7 +526,18 @@ async function loadTableData() {
   const entity = ENTITIES[currentEntityKey];
   try {
     const data = await apiCall(entity.url, { method: "GET" });
-    currentDataList = Array.isArray(data) ? data : data.result || [];
+    // Handle PageResponse structure (content: [...])
+    if (Array.isArray(data)) {
+      currentDataList = data;
+    } else if (data && Array.isArray(data.content)) {
+      currentDataList = data.content;
+    } else if (data && Array.isArray(data.data)) {
+      currentDataList = data.data;
+    } else if (data && data.result && Array.isArray(data.result)) {
+      currentDataList = data.result;
+    } else {
+      currentDataList = [];
+    }
     renderTable(currentDataList);
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="3" class="error-row" style="text-align:center;color:#e53e3e;padding:1.5rem;">Lỗi: ${e.message}</td></tr>`;
@@ -527,7 +563,7 @@ function renderTable(dataToRender) {
       if (entity.isLookup) {
         details = `<span class="pc-chip chip-primary">ID: ${item.id}</span>`;
       } else {
-        const ignoreList = ["id", "name", "imageUrl", "description"];
+        const ignoreList = ["id", "name", "imageUrl", "description", "coverImageUrl"];
         const pieces = Object.keys(item)
           .filter((k) => !ignoreList.includes(k) && item[k] !== null)
           .map((k) => {
@@ -545,9 +581,10 @@ function renderTable(dataToRender) {
       }
 
       const nameStr = item.name || item.id || "N/A";
+      const displayImgUrl = item.imageUrl || item.coverImageUrl;
       const imgHtml =
-        !entity.isLookup && item.imageUrl
-          ? `<img src="${item.imageUrl}" class="pc-img-thumb" alt="img" onerror="this.style.display='none'">`
+        !entity.isLookup && displayImgUrl
+          ? `<img src="${displayImgUrl}" class="pc-img-thumb" alt="img" onerror="this.style.display='none'">`
           : "";
       const desc = item.description
         ? item.description.replace(/"/g, "&quot;")
@@ -590,7 +627,7 @@ function filterTable(query) {
 }
 
 // 5. Modal Forms
-function openModal(itemId) {
+async function openModal(itemId) {
   isEditing = !!itemId;
   const entity = ENTITIES[currentEntityKey];
 
@@ -613,13 +650,13 @@ function openModal(itemId) {
       const readOnly = f.k === "id" && isEditing;
       let style = readOnly ? 'style="opacity: 0.6; pointer-events: none;"' : "";
 
-      if (f.k === "imageUrl") {
+      if (f.k.toLowerCase().includes("imageurl")) {
         inputHtml = `
             <input type="hidden" id="field-${f.k}" ${f.req ? "required" : ""}>
             <label class="btn btn-secondary" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; width: 100%;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="margin-right: 0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 <span id="upload-text-${f.k}">Bấm vào đây để chọn ảnh</span>
-                <input type="file" id="upload-${f.k}" accept="image/*" style="display:none;">
+                <input type="file" id="upload-${f.k}" accept="image/*" style="display:none;" data-field="${f.k}">
             </label>
         `;
         inputHtml += `<div class="pc-img-preview-wrap" style="text-align: center;"><img id="preview-${f.k}" class="pc-img-preview" src="" alt="Preview" style="display:none; margin-top:0.5rem; max-height:120px; border-radius:4px; max-width: 100%;"></div>`;
@@ -655,119 +692,108 @@ function openModal(itemId) {
     formFields.appendChild(formGroup);
   });
 
-  const imgInput = document.getElementById("field-imageUrl");
-  if (imgInput) {
-    imgInput.addEventListener("input", (e) => {
-      const preview = document.getElementById("preview-imageUrl");
-      if (e.target.value) {
-        preview.src = e.target.value;
-        preview.style.display = "block";
-      } else {
-        preview.style.display = "none";
-      }
-    });
-
-    const fileInput = document.getElementById("upload-imageUrl");
-    const uploadText = document.getElementById("upload-text-imageUrl");
-    if (fileInput && uploadText) {
-      fileInput.addEventListener("change", async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        uploadText.textContent = "Đang tải...";
-        fileInput.disabled = true;
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("entity", currentEntityKey || "common");
-
-        try {
-          const currentToken = localStorage.getItem("token");
-          const uploadResRaw = await fetch(`${API_BASE_URL}/api/files/upload`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${currentToken}`,
-            },
-            body: formData,
-          });
-
-          if (!uploadResRaw.ok) {
-            throw new Error("Lỗi HTTP: " + uploadResRaw.status);
-          }
-
-          const uploadRes = await uploadResRaw.json();
-
-          let uploadedImageUrl = null;
-          if (typeof uploadRes === "string") {
-            uploadedImageUrl = uploadRes;
-          } else if (uploadRes && typeof uploadRes === "object") {
-            uploadedImageUrl =
-              uploadRes.url ||
-              uploadRes.imageUrl ||
-              uploadRes.fileUrl ||
-              uploadRes.result ||
-              null;
-            if (!uploadedImageUrl) {
-              const firstStringVal = Object.values(uploadRes).find(
-                (v) => typeof v === "string",
-              );
-              if (firstStringVal) uploadedImageUrl = firstStringVal;
-            }
-          }
-
-          if (uploadedImageUrl) {
-            imgInput.value = uploadedImageUrl;
-            imgInput.dispatchEvent(new Event("input"));
-            showToast("Thành công", "Đã tải ảnh lên server.");
-          } else {
-            throw new Error("Không thể trích xuất URL ảnh từ server.");
-          }
-        } catch (err) {
-          showToast("Lỗi", "Tải ảnh thất bại: " + err.message, true);
-        } finally {
-          uploadText.textContent = "Chọn File";
-          fileInput.disabled = false;
-          fileInput.value = ""; // Reset file input
-        }
-      });
-    }
-  }
+  setupImageUploadEvents(entity);
 
   if (isEditing) {
     document.getElementById("part-id").value = itemId;
-    const item = currentDataList.find((i) => i.id === itemId);
-    const flatItem = flattenItemData(item, entity);
+    try {
+      const item = await apiCall(`${entity.url}/${itemId}`, { method: "GET" });
+      const flatItem = flattenItemData(item, entity);
 
-    entity.fields.forEach((f) => {
-      const val = flatItem[f.k];
-      if (f.t === "checkbox") {
-        document.getElementById(`field-${f.k}`).checked = !!val;
-      } else if (f.t === "lookup-multi") {
-        const arr = Array.isArray(val) ? val : [];
-        document
-          .querySelectorAll(`input[name="field-${f.k}"]`)
-          .forEach((cb) => {
+      entity.fields.forEach((f) => {
+        const val = flatItem[f.k];
+        const el = document.getElementById(`field-${f.k}`);
+        if (!el) return;
+
+        if (f.t === "checkbox") {
+          el.checked = !!val;
+        } else if (f.t === "lookup-multi") {
+          const arr = Array.isArray(val) ? val : [];
+          document.querySelectorAll(`input[name="field-${f.k}"]`).forEach((cb) => {
             cb.checked = arr.includes(cb.value);
           });
-      } else {
-        const el = document.getElementById(`field-${f.k}`);
-        if (el) {
+        } else {
           el.value = val !== undefined && val !== null ? val : "";
-          if (f.k === "imageUrl") {
-            const preview = document.getElementById("preview-imageUrl");
+          if (f.k.toLowerCase().includes("imageurl")) {
+            const preview = document.getElementById(`preview-${f.k}`);
             if (preview && val) {
               preview.src = val;
               preview.style.display = "block";
             }
           }
         }
-      }
-    });
+      });
+    } catch (err) {
+      showToast("Lỗi", "Không thể tải chi tiết: " + err.message, true);
+    }
   } else {
     document.getElementById("part-id").value = "";
   }
 
   document.getElementById("part-modal").classList.add("active");
+}
+
+function setupImageUploadEvents(entity) {
+  entity.fields
+    .filter((f) => f.k.toLowerCase().includes("imageurl"))
+    .forEach((f) => {
+      const imgInput = document.getElementById(`field-${f.k}`);
+      if (imgInput) {
+        imgInput.addEventListener("input", (e) => {
+          const preview = document.getElementById(`preview-${f.k}`);
+          if (e.target.value) {
+            preview.src = e.target.value;
+            preview.style.display = "block";
+          } else {
+            preview.style.display = "none";
+          }
+        });
+
+        const fileInput = document.getElementById(`upload-${f.k}`);
+        const uploadText = document.getElementById(`upload-text-${f.k}`);
+        if (fileInput && uploadText) {
+          fileInput.addEventListener("change", async (e) => {
+            const file = e.target.files[0];
+            const fieldKey = e.target.dataset.field;
+            if (!file) return;
+
+            uploadText.textContent = "Đang tải...";
+            fileInput.disabled = true;
+
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("entity", currentEntityKey || "common");
+
+            try {
+              const currentToken = localStorage.getItem("token");
+              const resRaw = await fetch(`${API_BASE_URL}/api/files/upload`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${currentToken}` },
+                body: formData,
+              });
+              if (!resRaw.ok) throw new Error("Lỗi HTTP: " + resRaw.status);
+              const uploadRes = await resRaw.json();
+              const url = typeof uploadRes === "string" ? uploadRes : (uploadRes.url || uploadRes.imageUrl || uploadRes.fileUrl || uploadRes.result);
+              
+              if (url) {
+                const targetInput = document.getElementById(`field-${fieldKey}`);
+                if (targetInput) {
+                  targetInput.value = url;
+                  targetInput.dispatchEvent(new Event("input"));
+                  showToast("Thành công", "Đã tải ảnh lên.");
+                }
+              }
+            } catch (err) {
+              showToast("Lỗi", "Tải ảnh thất bại: " + err.message, true);
+            } finally {
+              uploadText.textContent = "Bấm vào đây để chọn ảnh";
+              fileInput.disabled = false;
+              fileInput.value = "";
+            }
+          });
+        }
+      }
+    });
 }
 
 function flattenItemData(item, entity) {

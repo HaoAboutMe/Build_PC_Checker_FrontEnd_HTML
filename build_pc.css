@@ -785,12 +785,36 @@
     }
 }
 
-/* Spin animation for loading state */
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* ===================================
+   GAME COMPATIBILITY & FPS STYLES
+   =================================== */
+
+.game-card-item:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color) !important;
 }
+
+.selected-game-card {
+    animation: fadeIn 0.3s ease;
+}
+
+.resolution-btn.btn-primary {
+    background: var(--primary-gradient) !important;
+    color: white !important;
+    border-color: transparent !important;
+}
+
+.fps-card {
+    transition: transform 0.2s;
+}
+
+.fps-card:hover {
+    transform: scale(1.05);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
