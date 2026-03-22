@@ -415,9 +415,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Check auth and display username
   try {
     const me = await apiCall("/users/me");
+    const user = me.result || me;
+    
+    // Check for ADMIN role explicitly
+    const roles = (user.roles || []).map(r => r.name || r);
+    if (!roles.includes('ADMIN')) {
+        window.location.href = '403.html';
+        return;
+    }
+
     const displayName = document.getElementById("admin-display-name");
     if (displayName)
-      displayName.textContent = `Admin: ${me.result?.username || me.username || "Admin Hảo"}`;
+      displayName.textContent = `Admin: ${user.username || "Admin Hảo"}`;
   } catch (e) {
     console.error("Auth reveal failed", e);
   }
@@ -866,6 +875,12 @@ async function apiCall(endpoint, options = {}, retryCount = 0) {
   if (data.code === 1007 && retryCount === 0) {
     await refreshToken();
     return apiCall(endpoint, options, retryCount + 1);
+  }
+
+  // Handle Forbidden (User is logged in but has no permission)
+  if (data.code === 1008) {
+    window.location.href = '403.html';
+    return;
   }
 
   if (data.code && data.code !== 1000)
