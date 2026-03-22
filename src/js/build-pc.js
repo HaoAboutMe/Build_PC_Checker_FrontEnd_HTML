@@ -306,7 +306,7 @@ function renderSlotContent(el, comp, partData) {
   updatePartsCount();
 }
 
-function updatePartsCount() {
+function getBuildPartsCount() {
   let count = 0;
   if (buildState.cpuId) count++;
   if (buildState.mainboardId) count++;
@@ -317,7 +317,11 @@ function updatePartsCount() {
   if (buildState.coolerId) count++;
   count += buildState.ssdIds.length;
   count += buildState.hddIds.length;
+  return count;
+}
 
+function updatePartsCount() {
+  const count = getBuildPartsCount();
   document.getElementById("parts-count").innerText =
     `${count}/${componentsConfig.length} linh kiện`;
 
@@ -1183,6 +1187,12 @@ function openSaveModal() {
     setTimeout(() => (window.location.href = "login.html"), 1500);
     return;
   }
+  
+  // Show count in summary banner
+  const count = getBuildPartsCount();
+  const countEl = document.getElementById("save-modal-parts-count");
+  if (countEl) countEl.innerText = count;
+
   document.getElementById("save-build-modal").classList.add("active");
 }
 

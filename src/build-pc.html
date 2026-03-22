@@ -230,27 +230,53 @@
         </div>
     </div>
 
-    <!-- Save Build Modal -->
+    <!-- Modern Save Build Modal -->
     <div class="modal-overlay" id="save-build-modal">
-        <div class="modal-content sm">
-            <div class="modal-header border-0">
-                <h3>Lưu cấu hình PC</h3>
-                <button class="close-modal" id="close-save-build-btn"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Tên cấu hình <span class="req">*</span></label>
-                    <input type="text" id="build-name" placeholder="Ví dụ: PC Gaming Cao Cấp" class="form-control">
-                    <small id="build-name-error" class="text-danger" style="display: none;">Tên không được để trống</small>
+        <div class="modal-content sm premium-modal">
+            <div class="modal-header">
+                <div class="header-with-icon">
+                    <div class="header-icon-circle">
+                        <i class="fas fa-save"></i>
+                    </div>
+                    <div>
+                        <h3>Lưu cấu hình PC</h3>
+                        <p class="text-muted" style="font-size: 11px; margin: 0;">Lưu lại để xem lại sau hoặc chia sẻ với mọi người</p>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Mô tả (tùy chọn)</label>
-                    <textarea id="build-description" placeholder="Ghi chú về cấu hình này..." class="form-control" rows="3"></textarea>
-                    <small class="text-muted"><span id="desc-char-count">0</span>/500 ký tự</small>
-                </div>
+                <button class="close-modal" id="close-save-build-btn">&times;</button>
             </div>
-            <div class="modal-footer">
-                <button class="btn-save" id="confirm-save-build-btn" style="width: 100%;">Lưu ngay</button>
+            
+            <div class="modal-body-premium">
+                <!-- Build mini-summary banner -->
+                <div class="build-preview-banner">
+                    <div id="save-modal-build-summary" style="font-size: 11px; font-weight: 500; color: var(--secondary);">
+                        <i class="fas fa-info-circle"></i> Đang chuẩn bị lưu <span id="save-modal-parts-count">0</span> linh kiện...
+                    </div>
+                </div>
+
+                <div class="premium-form-group">
+                    <label class="form-label">Tên cấu hình <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-tag"></i>
+                        <input type="text" id="build-name" placeholder="Ví dụ: PC Gaming 2026 ...">
+                    </div>
+                    <div class="text-danger" id="build-name-error" style="display:none; font-size:11px; margin-top:4px;">Vui lòng nhập tên cấu hình để tiếp tục</div>
+                </div>
+
+                <div class="premium-form-group">
+                    <label class="form-label">Mô tả chi tiết</label>
+                    <div class="input-with-icon align-top">
+                        <i class="fas fa-align-left"></i>
+                        <textarea id="build-description" rows="3" placeholder="Ghi chú thêm về mục đích sử dụng, lưu ý..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-action-footer">
+                    <button class="btn-secondary flex-1" onclick="closeSaveModal()">Hủy bỏ</button>
+                    <button class="btn-primary flex-2" id="confirm-save-build-btn">
+                        <i class="fas fa-cloud-upload-alt"></i> Lưu ngay
+                    </button>
+                </div>
             </div>
         </div>
     </div>
