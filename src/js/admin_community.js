@@ -237,13 +237,14 @@ const ENTITIES = {
       { k: "recCpuScore", l: "Điểm CPU Đề nghị", t: "number", req: true },
       { k: "recGpuScore", l: "Điểm GPU Đề nghị", t: "number", req: true },
       { k: "minRamGb", l: "RAM Tối thiểu (GB)", t: "number", req: true },
+      { k: "recRamGb", l: "RAM Đề nghị (GB)", t: "number", req: true },
       { k: "minVramGb", l: "VRAM Tối thiểu (GB)", t: "number", req: true },
-      {
-        k: "minStorageGb",
-        l: "Dung lượng Tối thiểu (GB)",
-        t: "number",
-        req: true,
-      },
+      { k: "recVramGb", l: "VRAM Đề nghị (GB)", t: "number", req: true },
+      { k: "minStorageGb", l: "SSD Tối thiểu (GB)", t: "number", req: true },
+      { k: "recStorageGb", l: "SSD Đề nghị (GB)", t: "number", req: true },
+      { k: "baseFpsLow", l: "FPS Cơ bản (Thấp)", t: "number" },
+      { k: "baseFpsMedium", l: "FPS Cơ bản (Trung bình)", t: "number" },
+      { k: "baseFpsHigh", l: "FPS Cơ bản (Cao)", t: "number" },
     ],
   },
 
@@ -634,11 +635,18 @@ async function openEditor(itemId) {
   title.textContent = itemId ? `Edit ${config.title}` : `New ${config.title}`;
   fieldsContainer.innerHTML = "";
 
-  let existingData = itemId
-    ? dataList.find((i) => (i.id || i.name) == itemId)
-    : {};
-  if (isEditing && existingData) {
-    existingData = flattenItemData(existingData, config);
+  let existingData = {};
+  if (isEditing) {
+    try {
+      // Fetch full details for the specific item before editing
+      const response = await apiCall(`${config.url}/${itemId}`);
+      existingData = response.result || response;
+      existingData = flattenItemData(existingData, config);
+    } catch (err) {
+      console.warn("Detailed fetch failed, using list data:", err);
+      existingData = dataList.find((i) => (i.id || i.name) == itemId) || {};
+      existingData = flattenItemData(existingData, config);
+    }
   }
 
   config.fields.forEach((f) => {
