@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang chủ - Build PC Support</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+    <div class="home-page">
+        <div class="bg-blur-1"></div>
+        <div class="bg-blur-2"></div>
+
+        <!-- Header -->
+        <header class="main-header">
+            <div class="container header-content">
+                <div class="logo">
+                    <a href="home.html" style="text-decoration: none; color: inherit;">
+                        <h1 class="logo-text">Build PC Support</h1>
+                    </a>
+                </div>
+
+                <div class="search-bar-container">
+                    <div class="search-input-wrapper">
+                        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="global-search" placeholder="Tìm kiếm linh kiện...">
+                    </div>
+                </div>
+
+                <div class="user-profile-menu">
+                    <div class="user-info-trigger" id="user-menu-trigger">
+                        <div class="user-avatar-mini" id="user-initials">--</div>
+                        <div class="user-details-text">
+                            <span class="user-name" id="display-username">Loading...</span>
+                            <span class="user-email" id="display-email">...</span>
+                        </div>
+                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+
+                    <div class="dropdown-menu" id="profile-dropdown">
+                        <a href="profile.html" class="dropdown-item">
+                            <img src="https://www.figma.com/api/mcp/asset/4b7b8f7f-061e-49e3-9d95-f9ff9f96f219" alt="Profile" class="item-icon">
+                            Thông tin cá nhân
+                        </a>
+                        <a href="profile.html?action=edit" class="dropdown-item">
+                            <img src="https://www.figma.com/api/mcp/asset/18bf38be-0c71-4ac0-aadc-06bc7b1da4a8" alt="Edit" class="item-icon">
+                            Chỉnh sửa thông tin
+                        </a>
+                        <a href="profile.html?action=password" class="dropdown-item">
+                            <img src="https://www.figma.com/api/mcp/asset/01dd80b6-ab75-46d1-ad83-b4216d3dcf6e" alt="Password" class="item-icon">
+                            Đổi mật khẩu
+                        </a>
+                        <hr>
+                        <button id="logout-btn" class="dropdown-item logout-btn">
+                            <img src="https://www.figma.com/api/mcp/asset/e1f57ef5-3388-4488-be27-4cbdf7088512" alt="Logout" class="item-icon">
+                            Đăng xuất
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="container main-container">
+            <section class="components-grid-section">
+                <h2 class="section-title">Khám phá linh kiện</h2>
+                <div class="components-grid">
+                    <div class="category-card" data-category="cpu">
+                        <div class="cat-icon-container">
+                            <img src="/src/public/images/CPU_image.jpg" alt="CPU">
+                        </div>
+                        <h3>CPU</h3>
+                        <p>Bộ vi xử lý</p>
+                    </div>
+                    <div class="category-card" data-category="mainboard">
+                        <div class="cat-icon-container">
+                            <img src="/src/public/images/Main_image.jpg" alt="Mainboard">
+                        </div>
+                        <h3>MAINBOARD</h3>
+                        <p>Bo mạch chủ</p>
+                    </div>
+                    <div class="category-card" data-category="ram">
+                        <div class="cat-icon-container">
+                            <img src="/src/public/images/ram_image.jpg" alt="RAM">
+                        </div>
+                        <h3>RAM</h3>
+                        <p>Bộ nhớ trong</p>
+                    </div>
+                    <div class="category-card" data-category="vga">
+                        <div class="cat-icon-container">
+                            <img src="/src/public/images/vga_image.jpg" alt="VGA">
+                        </div>
+                        <h3>VGA</h3>
+                        <p>Card đồ họa</p>
+                    </div>
+                    <div class="category-card" data-category="ssd">
+                        <div class="cat-icon-container">
+                            <img src="/src/public/images/ssd_image.jpg" alt="SSD">
+                        </div>
+                        <h3>SSD</h3>
+                        <p>Ổ cứng thể rắn</p>
+                    </div>
+                    <div class="category-card" data-category="hdd">
+                        <div class="cat-icon-container">
+                            <img src="/src/public/images/hdd_image.jpg" alt="HDD">
+                        </div>
+                        <h3>HDD</h3>
+                        <p>Ổ cứng cơ học</p>
+                    </div>
+                    <div class="category-card" data-category="psu">
+                        <div class="cat-icon-container">
+                            <img src="/src/public/images/psu_image.png" alt="PSU">
+                        </div>
+                        <h3>PSU</h3>
+                        <p>Nguồn máy tính</p>
+                    </div>
+                    <div class="category-card" data-category="case">
+                        <div class="cat-icon-container">
+                            <img src="/src/public/images/case_image.jpg" alt="CASE">
+                        </div>
+                        <h3>CASE</h3>
+                        <p>Vỏ máy tính</p>
+                    </div>
+                    <div class="category-card" data-category="cooler">
+                        <div class="cat-icon-container">
+                            <img src="/src/public/images/Cooler_image.jpeg" alt="COOLER">
+                        </div>
+                        <h3>COOLER</h3>
+                        <p>Tản nhiệt PC</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="results-display" class="results-section" style="display: none;">
+                <div class="results-header">
+                    <div class="results-title-group">
+                        <h2 id="current-cat-title">CPU</h2>
+                        <div class="cat-search-wrapper">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <input type="text" id="category-search" placeholder="Tìm trong danh mục này...">
+                        </div>
+                    </div>
+                    <button id="close-results" class="close-btn">&times;</button>
+                </div>
+                <div class="results-stats">
+                    <span id="items-count">0 mục được tìm thấy</span>
+                </div>
+                <div class="parts-list" id="parts-list">
+                    <!-- Parts dynamically injected here -->
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-container">
+                <p>© 2026 Build PC Support. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Script -->
+    <script src="js/home.js"></script>
+</body>
+</html>
