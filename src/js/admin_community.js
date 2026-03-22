@@ -733,7 +733,7 @@ async function handleFileUpload(input, fieldKey) {
     }
   } catch (err) {
     statusEl.textContent = "Lỗi!";
-    alert("Upload failed: " + err.message);
+    showToast("Tải ảnh thất bại: " + err.message, "error");
   }
 }
 
@@ -787,8 +787,9 @@ async function saveEntry() {
     document.getElementById("entity-modal").classList.remove("active");
     if (isLookup) await prefetchLookups();
     loadEntity(currentEntity);
+    showToast("Đã lưu dữ liệu thành công!", "success");
   } catch (err) {
-    alert("Failed to save: " + err.message);
+    showToast("Không thể lưu: " + err.message, "error");
   }
 }
 
@@ -799,8 +800,9 @@ async function deleteItem(id) {
     await apiCall(`${config.url}/${id}`, { method: "DELETE" });
     if (config.isLookup) await prefetchLookups();
     loadEntity(currentEntity);
+    showToast("Đã xóa mục thành công!", "success");
   } catch (err) {
-    alert("Failed to delete: " + err.message);
+    showToast("Lỗi khi xóa: " + err.message, "error");
   }
 }
 

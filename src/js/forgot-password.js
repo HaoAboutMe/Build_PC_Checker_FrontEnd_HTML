@@ -78,16 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (data.code === 1000) {
-                    alert('Mã OTP đã được gửi đến email của bạn!');
+                    showToast(' Mã OTP đã được gửi đến email của bạn!', 'success');
                     stepRequest.style.display = 'none';
                     stepReset.style.display = 'block';
                 } else {
                     const message = ERROR_MESSAGES[data.code] || data.message || 'Lỗi gửi OTP';
-                    alert(message);
+                    showToast(message, 'error');
                 }
             } catch (error) {
                 console.error('Forgot password error:', error);
-                alert('Không thể kết nối đến server.');
+                showToast('Không thể kết nối đến server.', 'error');
             } finally {
                 forgotBtn.disabled = false;
                 forgotBtn.textContent = 'Gửi mã OTP';
@@ -131,15 +131,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (data.code === 1000) {
-                    alert('Đổi mật khẩu thành công! Hãy đăng nhập bằng mật khẩu mới.');
-                    window.location.href = 'login.html';
+                    showToast('Đổi mật khẩu thành công! Hãy đăng nhập ngay.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1000);
                 } else {
                     const message = ERROR_MESSAGES[data.code] || data.message || 'Lỗi đặt lại mật khẩu';
-                    alert(message);
+                    showToast(message, 'error');
                 }
             } catch (error) {
                 console.error('Reset password error:', error);
-                alert('Không thể kết nối đến server.');
+                showToast('Không thể kết nối đến server.', 'error');
             } finally {
                 resetBtn.disabled = false;
                 resetBtn.textContent = 'Cập nhật mật khẩu';
