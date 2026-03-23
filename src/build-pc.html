@@ -16,6 +16,24 @@
     <!-- CSS -->
     <link rel="stylesheet" href="css/toast.css">
     <link rel="stylesheet" href="css/build-pc.css">
+    <style>
+        /* Custom Confirm Modal styling */
+        .confirm-modal-content {
+            text-align: center;
+            padding: 24px;
+        }
+        .confirm-icon {
+            font-size: 48px;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+        .confirm-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .flex-1 { flex: 1; }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -28,6 +46,7 @@
             <nav class="sidebar-nav">
                 <a href="home.html"><i class="fas fa-home"></i> Trang chủ</a>
                 <a href="#" class="active"><i class="fas fa-tools"></i> Xây dựng PC</a>
+                <a href="my-builds.html"><i class="fas fa-save"></i> Cấu hình đã lưu</a>
                 <a href="profile.html"><i class="fas fa-user"></i> Hồ sơ</a>
                 <div class="nav-divider"></div>
                 <div id="admin-nav-item" style="display: none;">
@@ -369,5 +388,33 @@
     
     <script src="js/toast.js"></script>
     <script src="js/build-pc.js"></script>
+    <!-- Custom Confirm Modal -->
+    <div class="modal-overlay" id="custom-confirm-modal" style="z-index: 3000;">
+        <div class="modal-content sm">
+            <div class="confirm-modal-content">
+                <div class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3 id="confirm-title" style="margin-bottom: 8px;">Xác nhận</h3>
+                <p id="confirm-message" class="text-muted" style="font-size: 14px;"></p>
+                <div class="confirm-actions">
+                    <button class="btn-secondary flex-1" id="confirm-cancel-btn">Bỏ qua</button>
+                    <button class="btn-primary flex-1" id="confirm-ok-btn">Đồng ý</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Custom Confirm Modal -->
+    <div class="modal-overlay" id="custom-confirm-modal" style="z-index: 3000;">
+        <div class="modal-content sm">
+            <div class="confirm-modal-content">
+                <div class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3 id="confirm-title" style="margin-bottom: 8px;">Xác nhận</h3>
+                <p id="confirm-message" class="text-muted" style="font-size: 14px;"></p>
+                <div class="confirm-actions">
+                    <button class="btn-secondary flex-1" id="confirm-cancel-btn">Bỏ qua</button>
+                    <button class="btn-primary flex-1" id="confirm-ok-btn">Đồng ý</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

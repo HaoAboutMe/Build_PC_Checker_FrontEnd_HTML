@@ -204,15 +204,19 @@ async function loadUserInfo() {
   const logoutBtn = document.getElementById("logout-btn");
   const adminNav = document.getElementById("admin-nav-item");
 
-  if (!token) {
+  const setGuest = () => {
     userBrief.innerHTML = `
-            <div class="user-avatar" style="background:#475569"><i class="fas fa-user-secret"></i></div>
-            <div class="user-info">
-                <span class="name">Khách</span>
-                <span class="role"><a href="login.html" style="color:var(--primary-light); text-decoration:none;">Đăng nhập</a></span>
-            </div>
-        `;
-    logoutBtn.style.display = "none";
+        <div class="user-avatar" style="background:#475569"><i class="fas fa-user-secret"></i></div>
+        <div class="user-info">
+            <span class="name">Khách</span>
+            <span class="role"><a href="login.html" style="color:var(--primary-light); text-decoration:none;">Đăng nhập</a></span>
+        </div>
+    `;
+    if (logoutBtn) logoutBtn.style.display = "none";
+  };
+
+  if (!token) {
+    setGuest();
     return;
   }
 
@@ -221,34 +225,38 @@ async function loadUserInfo() {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await response.json();
-    const user = data.result || data;
 
-    if (user) {
-      const initials = (user.firstname || user.username || "U")
-        .substring(0, 1)
-        .toUpperCase();
+    if (data.code === 1000 && data.result) {
+      const user = data.result;
+      const displayName = user.username || user.firstname || "Người dùng";
+      const initials = displayName.substring(0, 1).toUpperCase();
       userBrief.innerHTML = `
                 <div class="user-avatar">${initials}</div>
                 <div class="user-info">
-                    <span class="name">${user.username}</span>
+                    <span class="name">${displayName}</span>
                     <span class="role">Thành viên</span>
                 </div>
             `;
 
-      // Check roles for admin nav
       const roles = (user.roles || []).map((r) => r.name || r);
-      if (roles.includes("ADMIN")) {
+      if (roles.includes("ADMIN") && adminNav) {
         adminNav.style.display = "block";
       }
+      if (logoutBtn) logoutBtn.style.display = "flex";
+    } else {
+        setGuest();
     }
   } catch (e) {
     console.error("Auth check failed", e);
+    setGuest();
   }
 
-  logoutBtn.addEventListener("click", () => {
-    localStorage.removeItem("token");
-    window.location.href = "login.html";
-  });
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+    });
+  }
 }
 
 /**
@@ -489,20 +497,40 @@ function setupCoreEvents() {
   });
 }
 
+function showConfirm(title, message, onOk) {
+  const modal = document.getElementById("custom-confirm-modal");
+  if (!modal) return;
+  document.getElementById("confirm-title").innerText = title;
+  document.getElementById("confirm-message").innerText = message;
+  modal.classList.add("active");
+  const okBtn = document.getElementById("confirm-ok-btn");
+  const cancelBtn = document.getElementById("confirm-cancel-btn");
+  okBtn.onclick = () => {
+    modal.classList.remove("active");
+    if (onOk) onOk();
+  };
+  cancelBtn.onclick = () => modal.classList.remove("active");
+}
+
 function resetBuild() {
-  if (!confirm("Bạn có chắc chắn muốn làm mới toàn bộ cấu hình không?")) return;
-  buildState.cpuId = null;
-  buildState.mainboardId = null;
-  buildState.ramId = null;
-  buildState.vgaId = null;
-  buildState.ssdIds = [];
-  buildState.hddIds = [];
-  buildState.psuId = null;
-  buildState.caseId = null;
-  buildState.coolerId = null;
-  initBuildSlots();
-  resetSummaryView();
-  triggerToast("Đã làm mới", "success");
+  showConfirm(
+    "Làm mới cấu hình",
+    "Bạn có chắc chắn muốn làm mới toàn bộ cấu hình không? Tất cả linh kiện đã chọn sẽ bị gỡ bỏ.",
+    () => {
+      buildState.cpuId = null;
+      buildState.mainboardId = null;
+      buildState.ramId = null;
+      buildState.vgaId = null;
+      buildState.ssdIds = [];
+      buildState.hddIds = [];
+      buildState.psuId = null;
+      buildState.caseId = null;
+      buildState.coolerId = null;
+      initBuildSlots();
+      resetSummaryView();
+      triggerToast("Đã làm mới", "success");
+    }
+  );
 }
 
 async function openPicker(compId) {
