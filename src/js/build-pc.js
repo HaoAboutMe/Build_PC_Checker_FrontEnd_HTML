@@ -441,6 +441,13 @@ function setupCoreEvents() {
     .addEventListener("click", () =>
       document.getElementById("compat-error-modal").classList.remove("active"),
     );
+  document
+    .getElementById("close-game-compat-list-btn")
+    .addEventListener("click", () =>
+      document
+        .getElementById("game-compat-list-modal")
+        .classList.remove("active"),
+    );
 
   // Search
   document.getElementById("picker-search").addEventListener("input", (e) => {
@@ -868,6 +875,13 @@ function setupGameEvents() {
     });
 
   document
+    .getElementById("check-all-games-btn")
+    .addEventListener("click", () => {
+      console.log("Check All Games Clicked");
+      checkAllGames();
+    });
+
+  document
     .getElementById("game-picker-search")
     .addEventListener("input", (e) => {
       gamePage = 1;
@@ -992,8 +1006,21 @@ function removeSelectedGame(id) {
 
 // Multi-Compatibility Check
 async function checkMultiCompatibility() {
-  if (!buildState.cpuId || !buildState.vgaId || !buildState.ramId) {
-    triggerToast("Thiếu linh kiện cốt lõi (CPU/VGA/RAM) để thực hiện", "error");
+  if (!buildState.cpuId) {
+    triggerToast("Bạn chưa chọn CPU để kiểm tra tương thích!", "error");
+    return;
+  }
+  if (!buildState.vgaId) {
+    triggerToast("Bạn chưa chọn Card đồ họa (VGA) để kiểm tra tương thích!", "error");
+    return;
+  }
+  if (!buildState.ramId) {
+    triggerToast("Bạn chưa chọn RAM để kiểm tra tương thích!", "error");
+    return;
+  }
+
+  if (buildState.selectedGames.length === 0) {
+    triggerToast("Vui lòng chọn ít nhất một game để kiểm tra!", "error");
     return;
   }
 
@@ -1036,8 +1063,12 @@ async function checkMultiCompatibility() {
 // Multi-FPS Estimation
 async function estimateMultiFPS() {
   console.log("estimateMultiFPS called");
-  if (!buildState.cpuId || !buildState.vgaId) {
-    triggerToast("Thiếu CPU hoặc VGA để dự toán FPS", "error");
+  if (!buildState.cpuId) {
+    triggerToast("Bạn chưa chọn CPU để ước tính FPS!", "error");
+    return;
+  }
+  if (!buildState.vgaId) {
+    triggerToast("Bạn chưa chọn Card đồ họa (VGA) để ước tính FPS!", "error");
     return;
   }
 
@@ -1091,8 +1122,16 @@ async function estimateMultiFPS() {
 }
 
 async function checkAllGames() {
-  if (!buildState.cpuId || !buildState.vgaId) {
-    triggerToast("Thiếu CPU/VGA", "error");
+  if (!buildState.cpuId) {
+    triggerToast("Bạn chưa chọn CPU để kiểm tra toàn bộ game!", "error");
+    return;
+  }
+  if (!buildState.vgaId) {
+    triggerToast("Bạn chưa chọn Card đồ họa (VGA) để kiểm tra toàn bộ game!", "error");
+    return;
+  }
+  if (!buildState.ramId) {
+    triggerToast("Bạn chưa chọn RAM để kiểm tra toàn bộ game!", "error");
     return;
   }
   const modal = document.getElementById("game-compat-list-modal");
@@ -1109,23 +1148,34 @@ async function checkAllGames() {
 
   if (res.code === 1000) {
     document.getElementById("pc-spec-summary").innerHTML = `
-            <div><strong>CPU Score:</strong> ${res.result.pcSummary.cpuScore}</div>
-            <div><strong>GPU Score:</strong> ${res.result.pcSummary.gpuScore}</div>
-            <div><strong>Total RAM:</strong> ${res.result.pcSummary.totalRamGb}GB</div>
-        `;
-    list.innerHTML = res.result.results
-      .map(
-        (g) => `
-            <div class="game-res-row" style="display:flex; align-items:center; gap:16px; padding:12px; border-bottom:1px solid var(--border);">
-                <img src="${g.coverImageUrl}" style="width:40px; height:40px; border-radius:4px; object-fit:cover;">
-                <div style="flex:1">
-                    <div style="font-weight:600; font-size:13px;">${g.gameName}</div>
-                    <div style="font-size:11px; color:var(--text-muted);">${g.detail}</div>
-                </div>
-                <span class="badge" style="background:${g.status === "RECOMMENDED" ? "#dcfce7" : "#fef3c7"}; color:${g.status === "RECOMMENDED" ? "#166534" : "#92400e"}">${g.status}</span>
+            <div class="summary-spec-card">
+                <span class="label">CPU Score</span>
+                <span class="value">${res.result.pcSummary.cpuScore}</span>
             </div>
-        `,
-      )
+            <div class="summary-spec-card">
+                <span class="label">GPU Score</span>
+                <span class="value">${res.result.pcSummary.gpuScore}</span>
+            </div>
+            <div class="summary-spec-card">
+                <span class="label">RAM</span>
+                <span class="value">${res.result.pcSummary.totalRamGb}GB</span>
+            </div>
+        `;
+
+    list.innerHTML = res.result.results
+      .map((g) => {
+        const statusClass = g.status.toLowerCase();
+        return `
+                <div class="game-res-card">
+                    <img src="${g.coverImageUrl}" alt="${g.gameName}">
+                    <div class="game-res-info">
+                        <div class="game-res-name">${g.gameName}</div>
+                        <div class="game-res-detail">${g.detail}</div>
+                    </div>
+                    <span class="status-tag ${statusClass}">${g.status}</span>
+                </div>
+            `;
+      })
       .join("");
   }
 }

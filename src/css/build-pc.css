@@ -1116,6 +1116,7 @@ body {
 .btn-circle:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Detail View */
+.modal-body { padding: 24px; }
 .detail-body { padding: 32px; overflow-y: auto; }
 
 .detail-footer {
@@ -1278,4 +1279,115 @@ body {
     margin-left: 2px;
 }
 
-.flex-2 { flex: 2; }
+.flex-2 { flex: 2; }/* Game Results Modal Premium Style */
+.build-summary-brief {
+    display: flex;
+    gap: 16px;
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+}
+
+.summary-spec-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: white;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #eef2f6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.summary-spec-card .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.summary-spec-card .value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.results-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding: 16px 24px;
+}
+
+.game-res-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    transition: all 0.2s;
+}
+
+.game-res-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-color: var(--primary);
+}
+
+.game-res-card img {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.game-res-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.game-res-name {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-main);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.game-res-detail {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.status-tag {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.status-tag.recommended {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-tag.minimum {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-tag.incompatible {
+    background: #fee2e2;
+    color: #991b1b;
+}

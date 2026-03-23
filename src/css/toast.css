@@ -1,9 +1,11 @@
 /* toast.css */
 .toast-container {
-    position: fixed;
-    top: 24px;
-    right: 24px;
-    z-index: 9999;
+    position: fixed !important;
+    top: 24px !important;
+    right: 24px !important;
+    bottom: auto !important;
+    left: auto !important;
+    z-index: 99999 !important;
     display: flex;
     flex-direction: column;
     gap: 12px;
