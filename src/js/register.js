@@ -125,15 +125,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (data.code === 1000) {
-                    alert('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.');
-                    window.location.href = '../index.html';
+                    showToast('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1000);
                 } else {
                     const message = ERROR_MESSAGES[data.code] || data.message || 'Lỗi đăng ký';
-                    alert(message);
+                    showToast(message, 'error');
                 }
             } catch (error) {
                 console.error('Registration error:', error);
-                alert('Không thể kết nối đến server. Vui lòng thử lại sau.');
+                showToast('Không thể kết nối đến server. Vui lòng thử lại sau.', 'error');
             } finally {
                 registerBtn.disabled = false;
                 registerBtn.textContent = 'Đăng ký';

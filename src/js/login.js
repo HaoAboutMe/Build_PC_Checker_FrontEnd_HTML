@@ -93,16 +93,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Save token
                     localStorage.setItem('token', data.result.token);
                     
-                    alert('Đăng nhập thành công!');
-                    // Redirect to home or dashboard
-                    window.location.href = 'home.html';
+                    showToast('Đăng nhập thành công!', 'success');
+                    // Redirect to home or dashboard after a short delay to let toast show
+                    setTimeout(() => {
+                        window.location.href = 'home.html';
+                    }, 500);
                 } else {
                     const message = ERROR_MESSAGES[data.code] || data.message || 'Email hoặc mật khẩu không chính xác';
-                    alert(message);
+                    showToast(message, 'error');
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                alert('Không thể kết nối đến server. Vui lòng thử lại sau.');
+                showToast('Không thể kết nối đến server. Vui lòng thử lại sau.', 'error');
             } finally {
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Đăng nhập';

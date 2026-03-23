@@ -237,13 +237,14 @@ const ENTITIES = {
       { k: "recCpuScore", l: "Điểm CPU Đề nghị", t: "number", req: true },
       { k: "recGpuScore", l: "Điểm GPU Đề nghị", t: "number", req: true },
       { k: "minRamGb", l: "RAM Tối thiểu (GB)", t: "number", req: true },
+      { k: "recRamGb", l: "RAM Đề nghị (GB)", t: "number", req: true },
       { k: "minVramGb", l: "VRAM Tối thiểu (GB)", t: "number", req: true },
-      {
-        k: "minStorageGb",
-        l: "Dung lượng Tối thiểu (GB)",
-        t: "number",
-        req: true,
-      },
+      { k: "recVramGb", l: "VRAM Đề nghị (GB)", t: "number", req: true },
+      { k: "minStorageGb", l: "SSD Tối thiểu (GB)", t: "number", req: true },
+      { k: "recStorageGb", l: "SSD Đề nghị (GB)", t: "number", req: true },
+      { k: "baseFpsLow", l: "FPS Cơ bản (Thấp)", t: "number" },
+      { k: "baseFpsMedium", l: "FPS Cơ bản (Trung bình)", t: "number" },
+      { k: "baseFpsHigh", l: "FPS Cơ bản (Cao)", t: "number" },
     ],
   },
 
@@ -414,9 +415,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Check auth and display username
   try {
     const me = await apiCall("/users/me");
+    const user = me.result || me;
+    
+    // Check for ADMIN role explicitly
+    const roles = (user.roles || []).map(r => r.name || r);
+    if (!roles.includes('ADMIN')) {
+        window.location.href = '403.html';
+        return;
+    }
+
     const displayName = document.getElementById("admin-display-name");
     if (displayName)
-      displayName.textContent = `Admin: ${me.result?.username || me.username || "Admin Hảo"}`;
+      displayName.textContent = `Admin: ${user.username || "Admin Hảo"}`;
   } catch (e) {
     console.error("Auth reveal failed", e);
   }
@@ -634,11 +644,18 @@ async function openEditor(itemId) {
   title.textContent = itemId ? `Edit ${config.title}` : `New ${config.title}`;
   fieldsContainer.innerHTML = "";
 
-  let existingData = itemId
-    ? dataList.find((i) => (i.id || i.name) == itemId)
-    : {};
-  if (isEditing && existingData) {
-    existingData = flattenItemData(existingData, config);
+  let existingData = {};
+  if (isEditing) {
+    try {
+      // Fetch full details for the specific item before editing
+      const response = await apiCall(`${config.url}/${itemId}`);
+      existingData = response.result || response;
+      existingData = flattenItemData(existingData, config);
+    } catch (err) {
+      console.warn("Detailed fetch failed, using list data:", err);
+      existingData = dataList.find((i) => (i.id || i.name) == itemId) || {};
+      existingData = flattenItemData(existingData, config);
+    }
   }
 
   config.fields.forEach((f) => {
@@ -733,7 +750,7 @@ async function handleFileUpload(input, fieldKey) {
     }
   } catch (err) {
     statusEl.textContent = "Lỗi!";
-    alert("Upload failed: " + err.message);
+    showToast("Tải ảnh thất bại: " + err.message, "error");
   }
 }
 
@@ -787,8 +804,9 @@ async function saveEntry() {
     document.getElementById("entity-modal").classList.remove("active");
     if (isLookup) await prefetchLookups();
     loadEntity(currentEntity);
+    showToast("Đã lưu dữ liệu thành công!", "success");
   } catch (err) {
-    alert("Failed to save: " + err.message);
+    showToast("Không thể lưu: " + err.message, "error");
   }
 }
 
@@ -799,8 +817,9 @@ async function deleteItem(id) {
     await apiCall(`${config.url}/${id}`, { method: "DELETE" });
     if (config.isLookup) await prefetchLookups();
     loadEntity(currentEntity);
+    showToast("Đã xóa mục thành công!", "success");
   } catch (err) {
-    alert("Failed to delete: " + err.message);
+    showToast("Lỗi khi xóa: " + err.message, "error");
   }
 }
 
@@ -856,6 +875,12 @@ async function apiCall(endpoint, options = {}, retryCount = 0) {
   if (data.code === 1007 && retryCount === 0) {
     await refreshToken();
     return apiCall(endpoint, options, retryCount + 1);
+  }
+
+  // Handle Forbidden (User is logged in but has no permission)
+  if (data.code === 1008) {
+    window.location.href = '403.html';
+    return;
   }
 
   if (data.code && data.code !== 1000)

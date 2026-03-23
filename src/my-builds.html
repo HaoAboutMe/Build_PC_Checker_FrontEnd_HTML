@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cấu hình của tôi - BuildPC Checker</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/toast.css">
+    <link rel="stylesheet" href="css/build-pc.css">
+    <style>
+        .builds-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .build-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+        }
+
+        .build-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-color: var(--primary);
+        }
+
+        .build-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .build-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        .build-date {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .build-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 39px;
+        }
+
+        .build-parts-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 0;
+            border-top: 1px solid #f1f5f9;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .part-tag {
+            background: #f8fafc;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .part-tag i {
+            color: var(--primary);
+            font-size: 10px;
+        }
+
+        .build-card-footer {
+            display: flex;
+            gap: 12px;
+            margin-top: auto;
+        }
+
+        /* Detail Modal Custom Styles */
+        .build-detail-header {
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: white;
+            padding: 32px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .detail-parts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .detail-part-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .detail-part-img {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            object-fit: contain;
+            background: white;
+            padding: 4px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .detail-part-info {
+            flex: 1;
+        }
+
+        .detail-part-cat {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+
+        .detail-part-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .empty-builds {
+            text-align: center;
+            padding: 80px 40px;
+            background: white;
+            border-radius: 20px;
+            grid-column: 1 / -1;
+            border: 2px dashed #e2e8f0;
+        }
+
+        .empty-builds i {
+            font-size: 48px;
+            color: #e2e8f0;
+            margin-bottom: 16px;
+        }
+
+        .empty-builds h3 {
+            margin-bottom: 8px;
+        }
+
+        .empty-builds p {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        /* Custom Confirm Modal styling */
+        .confirm-modal-content {
+            text-align: center;
+            padding: 24px;
+        }
+        .confirm-icon {
+            font-size: 48px;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+        .confirm-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .flex-1 { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fas fa-microchip"></i>
+                <span>BuildPC<span>Checker</span></span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="home.html"><i class="fas fa-home"></i> Trang chủ</a>
+                <a href="build-pc.html"><i class="fas fa-tools"></i> Xây dựng PC</a>
+                <a href="#" class="active"><i class="fas fa-save"></i> Cấu hình đã lưu</a>
+                <a href="profile.html"><i class="fas fa-user"></i> Hồ sơ</a>
+                <div class="nav-divider"></div>
+                <div id="admin-nav-item" style="display: none;">
+                    <a href="admin_community.html"><i class="fas fa-user-shield"></i> Quản trị</a>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-brief" id="user-brief">
+                    <!-- Loaded via JS -->
+                </div>
+                <button class="logout-btn" id="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-title">
+                    <h1>Cấu hình đã lưu</h1>
+                    <p>Quản lý các bộ PC bạn đã thiết kế</p>
+                </div>
+                <div class="header-actions">
+                    <a href="build-pc.html" class="btn-primary" style="text-decoration: none;">
+                        <i class="fas fa-plus"></i> Build mới
+                    </a>
+                </div>
+            </header>
+
+            <div id="builds-grid" class="builds-grid">
+                <!-- Loading State -->
+                <div class="w-100 text-center py-5" id="builds-loader">
+                    <i class="fas fa-circle-notch fa-spin fa-2x" style="color: var(--primary)"></i>
+                    <p class="mt-2 text-muted">Đang tải danh sách...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Build Detail Modal -->
+    <div class="modal-overlay" id="build-detail-modal">
+        <div class="modal-content lg">
+            <div class="modal-header" style="border:none; padding: 0;">
+                <div class="w-100 build-detail-header">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <span class="badge" style="background: rgba(255,255,255,0.2); color:white; margin-bottom: 8px;">Dữ liệu cấu hình</span>
+                            <h2 id="modal-build-name" style="color:white; font-weight:800; margin: 0; font-size: 28px;">Build Name</h2>
+                            <p id="modal-build-date" style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 8px 0 0 0;">Ngày tạo: --/--/----</p>
+                        </div>
+                        <button class="close-modal" id="close-detail-btn" style="color:white; font-size: 24px;">&times;</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-body" style="padding: 32px;">
+                <div class="grid-2-col" style="display: grid; grid-template-columns: 1fr 400px; gap: 32px;">
+                    <div class="detail-left">
+                        <h4 class="mini-title">Ghi chú / Mô tả</h4>
+                        <div id="modal-build-desc" style="background: #f8fafc; padding: 20px; border-radius: 12px; font-size: 14px; min-height: 80px; color:#475569; border: 1px solid #f1f5f9;">
+                            Không có mô tả.
+                        </div>
+                        
+                        <h4 class="mini-title" style="margin-top: 32px;">Trạng thái ước tính</h4>
+                        <div class="stats-preview" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; background: #22c55e; color:white; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size: 10px; font-weight: 700; color:#166534; text-transform: uppercase;">Tương thích</div>
+                                    <div style="font-size: 13px; font-weight: 600; color:#14532d;">Sẵn sàng hoạt động</div>
+                                </div>
+                            </div>
+                            <div style="background: #fefce8; border: 1px solid #fef9c3; padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; background: #eab308; color:white; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <div id="modal-psu-info">
+                                    <div style="font-size: 10px; font-weight: 700; color:#854d0e; text-transform: uppercase;">Nguồn</div>
+                                    <div style="font-size: 13px; font-weight: 600; color:#713f12;">---W</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-right">
+                        <h4 class="mini-title">Linh kiện chi tiết</h4>
+                        <div class="detail-parts-list" id="modal-parts-list">
+                            <!-- JS Injected -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div class="modal-footer" style="padding: 24px 32px; border-top: 1px solid #f1f5f9; display: flex; gap: 12px;">
+                <button class="btn-primary" id="use-build-btn" style="flex: 1;">
+                   <i class="fas fa-tools"></i> Sử dụng làm mẫu (Coming soon)
+                </button>
+                <button class="btn-secondary" id="detail-close-btn-bottom">Đóng cửa sổ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div class="modal-overlay" id="custom-confirm-modal" style="z-index: 3000;">
+        <div class="modal-content sm">
+            <div class="confirm-modal-content">
+                <div class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3 id="confirm-title" style="margin-bottom: 8px;">Xác nhận</h3>
+                <p id="confirm-message" class="text-muted" style="font-size: 14px;"></p>
+                <div class="confirm-actions">
+                    <button class="btn-secondary flex-1" id="confirm-cancel-btn">Bỏ qua</button>
+                    <button class="btn-primary flex-1" id="confirm-ok-btn" style="background: var(--danger); border-color: var(--danger);">Xác nhận</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/toast.js"></script>
+    <script src="js/my-builds.js"></script>
+</body>
+</html>

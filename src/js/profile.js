@@ -157,7 +157,7 @@ async function loadUserProfile() {
         }
     } catch (error) {
         console.error('Error loading profile:', error);
-        alert('Không thể tải thông tin hồ sơ.');
+        showToast('Không thể tải thông tin hồ sơ.', 'error');
     }
 }
 
@@ -206,13 +206,14 @@ function setupInfoForm(user) {
                 });
 
                 if (data.code === 1000) {
-                    alert('Cập nhật thông tin thành công!');
-                    location.reload(); // Refresh to update all UI parts
+                    showToast('Cập nhật thông tin thành công!', 'success');
+                    setTimeout(() => location.reload(), 800);
                 } else {
-                    alert(data.message || 'Lỗi cập nhật thông tin');
+                    showToast(data.message || 'Lỗi cập nhật thông tin', 'error');
                 }
             } catch (error) {
                 console.error('Update error:', error);
+                showToast('Không thể lưu thay đổi. Vui lòng thử lại.', 'error');
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'Lưu thay đổi';
@@ -234,12 +235,12 @@ function setupPasswordForm() {
             const confirmPassword = document.getElementById('confirm-password').value;
 
             if (newPassword !== confirmPassword) {
-                alert('Mật khẩu mới không khớp!');
+                showToast('Mật khẩu xác nhận không khớp!', 'error');
                 return;
             }
 
             if (newPassword.length < 8) {
-                alert('Mật khẩu mới phải có ít nhất 8 ký tự!');
+                showToast('Mật khẩu mới phải có ít nhất 8 ký tự!', 'error');
                 return;
             }
 
@@ -253,14 +254,17 @@ function setupPasswordForm() {
                 });
 
                 if (data.code === 1000) {
-                    alert('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
+                    showToast('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
                     localStorage.removeItem('token');
-                    window.location.href = 'login.html';
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1200);
                 } else {
-                    alert(data.message || 'Mật khẩu hiện tại không chính xác');
+                    showToast(data.message || 'Mật khẩu hiện tại không chính xác', 'error');
                 }
             } catch (error) {
                 console.error('Password change error:', error);
+                showToast('Không thể đổi mật khẩu. Vui lòng thử lại.', 'error');
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'Cập nhật mật khẩu';
