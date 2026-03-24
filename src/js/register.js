@@ -148,8 +148,8 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            firstName: firstname,
-            lastName: lastname,
+            firstname: firstname,
+            lastname: lastname,
             username: username,
             email: email,
             password: password,
