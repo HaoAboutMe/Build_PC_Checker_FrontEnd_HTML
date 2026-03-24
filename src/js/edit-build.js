@@ -62,8 +62,16 @@ const componentsConfig = [
 const LABEL_MAP = {
   socket: "Socket", tdp: "Công suất (TDP)", tdpSupport: "Hỗ trợ TDP", pcieVersion: "PCIe",
   vrmMin: "VRM Min", igpu: "iGPU", ramType: "Loại RAM", ramBusMax: "Bus MAX",
-  vramGb: "VRAM", capacity: "Dung lượng", wattage: "Công suất", efficiency: "Chuẩn"
+  vramGb: "VRAM", capacity: "Dung lượng", wattage: "Công suất", efficiency: "Chuẩn",
+  busWidth: "Băng thông", memoryType: "Dòng bộ nhớ", clockSpeed: "Xung nhịp",
+  coreCount: "Số nhân", threadCount: "Số luồng", lithography: "Tiến trình",
+  l3Cache: "L3 Cache", socketId: "Socket", ramTypeId: "Loại RAM", pcieVersionId: "PCIe",
+  sizeId: "Kích cỡ", coolerTypeId: "Loại tản", ssdTypeId: "Loại SSD", formFactorId: "Kích thước"
 };
+
+function formatLabel(key) {
+  return LABEL_MAP[key] || key.charAt(0).toUpperCase() + key.slice(1);
+}
 
 const UNIT_MAP = {
   tdp: "W", tdpSupport: "W", wattage: "W", ramBus: "MHz", vramGb: "GB", capacity: "GB"
@@ -403,25 +411,69 @@ function showDetail(item) {
   document.getElementById("picker-list-view").style.display = "none";
   document.getElementById("picker-detail-view").style.display = "block";
   const content = document.getElementById("detail-content");
-  
+
+  // Construct Specs Grid dynamically
   let specsHtml = "";
+  const excludedFields = [
+    "score", "id", "imageUrl", "coverImageUrl", "name", 
+    "description", "enabled", "deleted", "code", "result", "message"
+  ];
+
   Object.entries(item).forEach(([key, value]) => {
-      if (['id', 'imageUrl', 'name', 'description'].includes(key) || value === null) return;
-      let displayValue = typeof value === 'object' ? (value.name || JSON.stringify(value)) : value;
-      if (UNIT_MAP[key]) displayValue = `${displayValue} ${UNIT_MAP[key]}`;
-      specsHtml += `<div class="spec-item-box"><span class="spec-label">${key}</span><span class="spec-value">${displayValue}</span></div>`;
+    if (excludedFields.includes(key) || value === null || value === undefined)
+      return;
+
+    let displayValue = value;
+    if (typeof value === "object") {
+      displayValue = value.name || value.title || JSON.stringify(value);
+    } else if (typeof value === "boolean") {
+      displayValue = value ? "Có" : "Không";
+    }
+
+    // Apply Units
+    if (UNIT_MAP[key] && (typeof displayValue === "number" || (!isNaN(displayValue) && displayValue !== ""))) {
+      displayValue = `${displayValue} ${UNIT_MAP[key]}`;
+    }
+
+    specsHtml += `
+            <div class="spec-item-box">
+                <span class="spec-label">${formatLabel(key)}</span>
+                <span class="spec-value">${displayValue}</span>
+            </div>
+        `;
   });
 
   content.innerHTML = `
-    <div class="item-details-layout" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-        <img src="${item.imageUrl || ""}" style="width:100%; border-radius:12px;">
-        <div>
-            <h3>${item.name}</h3>
-            <p>${item.description || "Chưa có mô tả"}</p>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:16px;">${specsHtml}</div>
+        <div class="item-details-layout">
+            <!-- Col 1: Visual -->
+            <div class="item-visual-col">
+                 <div class="item-image-wrapper">
+                      <img src="${item.imageUrl || "https://via.placeholder.com/300"}" alt="${item.name}">
+                 </div>
+            </div>
+
+            <!-- Col 2: Info & Description -->
+            <div class="item-info-col">
+                <div class="item-header-meta">
+                    <span class="item-badge-cat">${currentPickerComp.name}</span>
+                    <h2 class="item-name-heading">${item.name}</h2>
+                    <div class="item-desc-section">
+                        <h4 class="mini-title">Mô tả sản phẩm</h4>
+                        <div class="item-desc-text">${item.description || "Sản phẩm chưa có mô tả chi tiết từ nhà sản xuất."}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Col 3: Technical Specs -->
+            <div class="item-specs-col">
+                <h4 class="specs-heading">Thông số kỹ thuật</h4>
+                <div class="item-specs-grid">
+                    ${specsHtml || '<p class="text-muted">Không có thông số kỹ thuật chi tiết.</p>'}
+                </div>
+            </div>
         </div>
-    </div>
-  `;
+    `;
+
   document.getElementById("detail-select-btn").onclick = () => selectPart(item);
 }
 
@@ -512,21 +564,52 @@ function updateSummaryView(result) {
 }
 
 async function analyzeBottleneck() {
-    if (!buildState.cpuId || !buildState.vgaId) { triggerToast("Cần CPU & VGA", "warning"); return; }
-    const res = await apiCall("/builds/analyze", "POST", { 
-        cpuId: buildState.cpuId, 
-        vgaId: buildState.vgaId,
-        gpuId: buildState.vgaId 
-    });
-    if (res.code === 1000 && res.result) {
-        document.getElementById("bottleneck-empty").style.display = "none";
-        document.getElementById("bottleneck-results-content").style.display = "block";
-        const r = res.result.results;
-        document.getElementById("bottleneck-1080p").innerText = `${r['1080p'].severity} (${r['1080p'].ratio}%)`;
-        document.getElementById("bottleneck-2k").innerText = `${r['2k'].severity} (${r['2k'].ratio}%)`;
-        document.getElementById("bottleneck-4k").innerText = `${r['4k'].severity} (${r['4k'].ratio}%)`;
-        document.getElementById("bottleneck-message").innerText = res.result.message;
-    }
+  if (!buildState.cpuId || !buildState.vgaId) {
+    triggerToast("Thiếu linh kiện trọng yếu (CPU/VGA)", "error");
+    return;
+  }
+
+  const btn = document.getElementById("check-bottleneck-btn");
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
+  btn.disabled = true;
+
+  const res = await apiCall("/builds/analyze", "POST", {
+    cpuId: buildState.cpuId,
+    vgaId: buildState.vgaId,
+    gpuId: buildState.vgaId,
+  });
+
+  btn.innerHTML = '<i class="fas fa-search"></i> Phân tích';
+  btn.disabled = false;
+
+  if (res.code === 1000 && res.result) {
+    document.getElementById("bottleneck-empty").style.display = "none";
+    document.getElementById("bottleneck-results-content").style.display =
+      "block";
+
+    const data = res.result.results;
+    const colorMap = {
+      NONE: "#10b981",
+      LOW: "#63b3ed",
+      MEDIUM: "#f6ad55",
+      HIGH: "#f56565",
+    };
+
+    const resDisplay = (key, id) => {
+      const el = document.getElementById(id);
+      const val = data[key] || { severity: "NONE" };
+      el.innerText = val.severity === "NONE" ? "Tốt" : val.severity;
+      el.style.color = colorMap[val.severity] || "inherit";
+    };
+
+    resDisplay("1080p", "bottleneck-1080p");
+    resDisplay("2k", "bottleneck-2k");
+    resDisplay("4k", "bottleneck-4k");
+
+    document.getElementById("bottleneck-message").innerHTML = `
+            <p><strong>Cân bằng:</strong> ${data["1080p"].message}</p>
+        `;
+  }
 }
 
 /**
@@ -571,18 +654,274 @@ async function handleUpdateBuild() {
 /**
  * GAME COMPATIBILITY LOGIC
  */
+let allGames = [];
+let tempSelectedGameIds = [];
+let gamePage = 1;
+const G_PER_PAGE = 12;
+
 function setupGameEvents() {
-    // Add logic similar to build-pc.js for game selection and FPS estimation if needed
-    // For now, attaching the "Check All Games" to a basic toast or API if implemented
+  document
+    .getElementById("view-game-list-btn")
+    .addEventListener("click", openGamePicker);
+  document
+    .getElementById("close-game-picker-btn")
+    .addEventListener("click", () =>
+      document.getElementById("game-picker-modal").classList.remove("active"),
+    );
+  document
+    .getElementById("confirm-game-selection-btn")
+    .addEventListener("click", confirmGameSelection);
+
+  document.getElementById("game-page-prev").addEventListener("click", () => {
+    if (gamePage > 1) {
+      gamePage--;
+      renderGamePage();
+    }
+  });
+  document.getElementById("game-page-next").addEventListener("click", () => {
+    if (gamePage < Math.ceil(allGames.length / G_PER_PAGE)) {
+      gamePage++;
+      renderGamePage();
+    }
+  });
+
+  // Check buttons
+  document
+    .getElementById("check-multi-compat-btn")
+    .addEventListener("click", checkMultiCompatibility);
+  document
+    .getElementById("check-multi-fps-btn")
+    .addEventListener("click", estimateMultiFPS);
+  document
+    .getElementById("check-all-games-btn")
+    .addEventListener("click", checkAllGames);
+
+  document
+    .getElementById("game-picker-search")
+    .addEventListener("input", (e) => {
+      gamePage = 1;
+      renderGamePage(e.target.value);
+    });
+
+  renderSelectedGamesList();
 }
 
-async function checkAllGameCompatibility() {
-    if (!buildState.cpuId || !buildState.vgaId || !buildState.ramId) {
-        triggerToast("Cần cấu hình cơ bản để kiểm tra game", "warning");
-        return;
+async function openGamePicker() {
+  document.getElementById("game-picker-modal").classList.add("active");
+  tempSelectedGameIds = [...buildState.selectedGameIds];
+  updateGameSelCount();
+
+  if (allGames.length === 0) {
+    document.getElementById("game-picker-items").innerHTML =
+      '<div class="w-100 text-center py-5"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+    const res = await apiCall("/games?size=200");
+    allGames = res.result?.content || res.result?.data || res.result || [];
+    renderGamePage();
+  } else {
+    renderGamePage();
+  }
+}
+
+function renderGamePage(query = "") {
+  const list = document.getElementById("game-picker-items");
+  list.innerHTML = "";
+  const filtered = allGames.filter((g) => {
+    const name = (g.name || g.gameName || "").toLowerCase();
+    return name.includes(query.toLowerCase());
+  });
+  const totalPages = Math.ceil(filtered.length / G_PER_PAGE) || 1;
+  document.getElementById("game-page-info").innerText =
+    `Trang ${gamePage} / ${totalPages}`;
+
+  const start = (gamePage - 1) * G_PER_PAGE;
+  const items = filtered.slice(start, start + G_PER_PAGE);
+
+  items.forEach((game) => {
+    const isSelected = tempSelectedGameIds.includes(game.id);
+    const card = document.createElement("div");
+    card.className = "game-card-mini";
+    card.innerHTML = `
+            <div class="game-checkbox-overlay ${isSelected ? "active" : ""}">
+                <i class="fas fa-check"></i>
+            </div>
+            <img src="${game.coverImageUrl || "https://via.placeholder.com/150x200"}" alt="${game.name || game.gameName}">
+            <div class="game-name-label">${game.name || game.gameName || "N/A"}</div>
+        `;
+    card.onclick = () => toggleGameTempSelection(game.id);
+    list.appendChild(card);
+  });
+}
+
+function toggleGameTempSelection(gameId) {
+  const idx = tempSelectedGameIds.indexOf(gameId);
+  if (idx > -1) tempSelectedGameIds.splice(idx, 1);
+  else tempSelectedGameIds.push(gameId);
+  renderGamePage();
+  updateGameSelCount();
+}
+
+function updateGameSelCount() {
+  document.getElementById("game-sel-count").innerText = `Đã chọn ${tempSelectedGameIds.length} game`;
+}
+
+function confirmGameSelection() {
+  buildState.selectedGameIds = [...tempSelectedGameIds];
+  buildState.selectedGames = allGames.filter((g) =>
+    buildState.selectedGameIds.includes(g.id),
+  );
+  document.getElementById("game-picker-modal").classList.remove("active");
+  renderSelectedGamesList();
+}
+
+function renderSelectedGamesList() {
+  const container = document.getElementById("selected-games-list");
+  const actions = document.getElementById("game-actions");
+  const resWrap = document.getElementById("resolution-selector-wrap");
+  const btnText = document.getElementById("view-game-list-btn");
+
+  btnText.innerHTML = `<i class="fas fa-plus"></i> Chọn Games (${buildState.selectedGames.length})`;
+
+  if (buildState.selectedGames.length === 0) {
+    container.innerHTML = '<div class="empty-games-placeholder">Chưa có game nào được chọn</div>';
+    actions.style.display = "none";
+    resWrap.style.display = "none";
+    return;
+  }
+  actions.style.display = "flex";
+  resWrap.style.display = "block";
+
+  container.innerHTML = buildState.selectedGames
+    .map((game) => `
+        <div class="selected-game-item" id="sel-game-${game.id}">
+            <img src="${game.coverImageUrl || "https://via.placeholder.com/32"}" alt="${game.name || game.gameName}">
+            <div class="game-name">${game.name || game.gameName || "N/A"}</div>
+            <div class="game-status-badge" id="status-badge-${game.id}"></div>
+            <button class="remove-game" onclick="removeSelectedGame('${game.id}')"><i class="fas fa-times"></i></button>
+        </div>
+    `).join("");
+}
+
+function removeSelectedGame(id) {
+  buildState.selectedGameIds = buildState.selectedGameIds.filter(gid => gid !== id);
+  buildState.selectedGames = buildState.selectedGames.filter(g => g.id !== id);
+  renderSelectedGamesList();
+}
+
+async function checkMultiCompatibility() {
+  if (!buildState.cpuId || !buildState.vgaId || !buildState.ramId) {
+    triggerToast("Thiếu linh kiện trọng yếu (CPU/VGA/RAM)", "error");
+    return;
+  }
+  if (buildState.selectedGames.length === 0) {
+    triggerToast("Vui lòng chọn ít nhất một game", "warning");
+    return;
+  }
+
+  triggerToast("Đang kiểm tra độ tương thích...", "info");
+  for (const game of buildState.selectedGames) {
+    const badge = document.getElementById(`status-badge-${game.id}`);
+    badge.innerText = "⌛";
+    badge.style.background = "#e2e8f0";
+    const res = await apiCall(`/games/${game.id}/check-compatibility`, "POST", {
+      cpuId: buildState.cpuId,
+      vgaId: buildState.vgaId,
+      ramId: buildState.ramId,
+    });
+    if (res.code === 1000 && res.result) {
+      const compatibility = res.result.compatibility || res.result.data?.compatibility;
+      const isRec = compatibility === "RECOMMENDED";
+      badge.innerText = isRec ? "REC" : "MIN";
+      badge.style.background = isRec ? "var(--success)" : "var(--accent)";
+      badge.style.color = "white";
+    } else {
+      badge.innerText = "Error";
+      badge.style.background = "var(--danger)";
     }
-    triggerToast("Tính năng kiểm tra toàn bộ game đang được gọi...", "info");
-    // Implementation matches build-pc.js game check logic
+  }
+}
+
+async function estimateMultiFPS() {
+  if (!buildState.cpuId || !buildState.vgaId) {
+    triggerToast("Thiếu CPU/VGA để ước tính FPS", "error");
+    return;
+  }
+  const resInput = document.querySelector('input[name="res-choice"]:checked');
+  if (!resInput) { triggerToast("Vui lòng chọn độ phân giải", "warning"); return; }
+  const resolution = resInput.value;
+
+  triggerToast(`Đang dự toán FPS (${resolution})...`, "info");
+  for (const game of buildState.selectedGames) {
+    const badge = document.getElementById(`status-badge-${game.id}`);
+    badge.innerText = "FPS...";
+    badge.style.background = "#e2e8f0";
+    const res = await apiCall(`/games/${game.id}/estimate-fps`, "POST", {
+      cpuId: buildState.cpuId,
+      vgaId: buildState.vgaId,
+      resolution: resolution,
+    });
+    if (res.code === 1000 && res.result) {
+      const fpsData = res.result.fpsEstimates;
+      badge.innerHTML = `
+                <div class="fps-multi-wrap">
+                    <div class="fps-tag low" title="${fpsData.low.message}">
+                        <span class="label">Low</span>
+                        <span class="value">${fpsData.low.estimatedFps}</span>
+                    </div>
+                    <div class="fps-tag med" title="${fpsData.medium.message}">
+                        <span class="label">Med</span>
+                        <span class="value">${fpsData.medium.estimatedFps}</span>
+                    </div>
+                    <div class="fps-tag high" title="${fpsData.high.message}">
+                        <span class="label">High</span>
+                        <span class="value">${fpsData.high.estimatedFps}</span>
+                    </div>
+                </div>
+            `;
+      badge.style.background = "transparent";
+      badge.style.padding = "0";
+    } else {
+      badge.innerText = "Lỗi";
+      badge.style.background = "var(--danger)";
+    }
+  }
+}
+
+async function checkAllGames() {
+  if (!buildState.cpuId || !buildState.vgaId || !buildState.ramId) {
+    triggerToast("Thiếu linh kiện trọng yếu", "error");
+    return;
+  }
+  const modal = document.getElementById("game-compat-list-modal");
+  modal.classList.add("active");
+  const list = document.getElementById("game-compat-results");
+  list.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Đang kiểm tra...</p></div>';
+
+  const res = await apiCall("/games/check-compatible", "POST", {
+    cpuId: buildState.cpuId,
+    vgaId: buildState.vgaId,
+    ramId: buildState.ramId,
+  });
+
+  if (res.code === 1000) {
+    document.getElementById("pc-spec-summary").innerHTML = `
+            <div class="summary-spec-card"><span class="label">CPU Score</span><span class="value">${res.result.pcSummary.cpuScore}</span></div>
+            <div class="summary-spec-card"><span class="label">GPU Score</span><span class="value">${res.result.pcSummary.gpuScore}</span></div>
+            <div class="summary-spec-card"><span class="label">RAM</span><span class="value">${res.result.pcSummary.totalRamGb}GB</span></div>
+        `;
+    list.innerHTML = res.result.results.map((g) => {
+        const statusClass = g.status.toLowerCase();
+        return `
+            <div class="game-res-card">
+                <img src="${g.coverImageUrl}" alt="${g.gameName}">
+                <div class="game-res-info">
+                    <div class="game-res-name">${g.gameName || g.name || "N/A"}</div>
+                    <div class="game-res-detail">${g.detail}</div>
+                </div>
+                <span class="status-tag ${statusClass}">${g.status}</span>
+            </div>
+        `;
+    }).join("");
+  }
 }
 
 function showConfirm(title, message, onOk) {
