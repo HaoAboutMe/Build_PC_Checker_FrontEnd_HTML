@@ -19,6 +19,28 @@ const buildState = {
   selectedGames: [],
 };
 
+// Filter Mapping
+const FILTERS_CONFIG = {
+  cpu: [{ key: "socketId", label: "Socket", api: "/sockets" }],
+  mainboard: [
+    { key: "socketId", label: "Socket", api: "/sockets" },
+    { key: "ramTypeId", label: "Loại RAM", api: "/ram-types" },
+    { key: "sizeId", label: "Kích cỡ", api: "/case-sizes" },
+  ],
+  ram: [{ key: "ramTypeId", label: "Loại RAM", api: "/ram-types" }],
+  vga: [{ key: "pcieVersionId", label: "Chuẩn PCIe", api: "/pcie-versions" }],
+  psu: [{ key: "efficiency", label: "Hiệu suất" }],
+  ssd: [
+    { key: "ssdTypeId", label: "Loại SSD", api: "/ssd-types" },
+    { key: "formFactorId", label: "Kích thước", api: "/form-factors" },
+  ],
+  hdd: [{ key: "formFactorId", label: "Kích thước", api: "/form-factors" }],
+  cooler: [{ key: "coolerTypeId", label: "Loại tản", api: "/cooler-types" }],
+  case: [{ key: "sizeId", label: "Kích cỡ Case", api: "/case-sizes" }],
+};
+
+let activeFilters = {};
+
 // Component Definitions (Adapted with FontAwesome)
 const componentsConfig = [
   {
@@ -459,12 +481,8 @@ function setupCoreEvents() {
 
   // Search
   document.getElementById("picker-search").addEventListener("input", (e) => {
-    const query = e.target.value.toLowerCase().trim();
-    filteredItems = pickerItems.filter((item) =>
-      item.name.toLowerCase().includes(query),
-    );
     pickerPage = 1;
-    renderPickerPage();
+    applyFilters();
   });
 
   // Pagination
@@ -472,12 +490,14 @@ function setupCoreEvents() {
     if (pickerPage > 1) {
       pickerPage--;
       renderPickerPage();
+      document.getElementById("picker-items").scrollTop = 0;
     }
   });
   document.getElementById("page-next-btn").addEventListener("click", () => {
     if (pickerPage < Math.ceil(filteredItems.length / ITEMS_PER_PAGE)) {
       pickerPage++;
       renderPickerPage();
+      document.getElementById("picker-items").scrollTop = 0;
     }
   });
 
@@ -537,22 +557,120 @@ async function openPicker(compId) {
   const comp = componentsConfig.find((c) => c.id === compId);
   currentPickerComp = comp;
   pickerPage = 1;
+  activeFilters = {}; // Reset filters
+
   document.getElementById("picker-title").innerText = `Chọn ${comp.name}`;
   document.getElementById("picker-search").value = "";
+  document.getElementById("picker-filters").innerHTML = ""; // Clear filters UI
   document.getElementById("picker-items").innerHTML =
     '<div class="w-100 text-center py-5"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>';
+
   document.getElementById("picker-modal").classList.add("active");
   document.getElementById("picker-list-view").style.display = "block";
   document.getElementById("picker-detail-view").style.display = "none";
 
+  // Fetch filters lookups (non-blocking for main list)
+  renderFilters(compId);
+
   const res = await apiCall(comp.api);
   if (res.code === 1000) {
     pickerItems = res.result.data || res.result || [];
-    filteredItems = pickerItems;
-    renderPickerPage();
+    applyFilters();
   } else {
     triggerToast("Không thể tải danh sách", "error");
   }
+}
+
+async function renderFilters(compId) {
+  const filters = FILTERS_CONFIG[compId] || [];
+  const container = document.getElementById("picker-filters");
+  container.innerHTML = "";
+
+  if (filters.length === 0) {
+    container.style.display = "none";
+    return;
+  }
+  container.style.display = "flex";
+
+  for (const f of filters) {
+    const group = document.createElement("div");
+    group.className = "filter-group";
+    group.innerHTML = `<label>${f.label}</label><select id="filter-${f.key}"><option value="">Tất cả</option></select>`;
+    container.appendChild(group);
+
+    const select = group.querySelector("select");
+
+    // Dynamic fetch if api exists
+    if (f.api) {
+      apiCall(f.api).then((res) => {
+        if (res.code === 1000) {
+          const list = res.result.data || res.result || [];
+          list.forEach((item) => {
+            const opt = document.createElement("option");
+            opt.value = item.id || item.name;
+            opt.innerText = item.name || item;
+            select.appendChild(opt);
+          });
+        }
+      });
+    } else if (f.key === "efficiency") {
+      [
+        "80 Plus",
+        "80 Plus Bronze",
+        "80 Plus Silver",
+        "80 Plus Gold",
+        "80 Plus Platinum",
+        "80 Plus Titanium",
+      ].forEach((val) => {
+        const opt = document.createElement("option");
+        opt.value = val;
+        opt.innerText = val;
+        select.appendChild(opt);
+      });
+    }
+
+    select.addEventListener("change", (e) => {
+      activeFilters[f.key] = e.target.value;
+      pickerPage = 1;
+      applyFilters();
+    });
+  }
+}
+
+function applyFilters() {
+  const searchQuery = document
+    .getElementById("picker-search")
+    .value.toLowerCase()
+    .trim();
+
+  filteredItems = pickerItems.filter((item) => {
+    // 1. Search Query
+    if (searchQuery && !item.name.toLowerCase().includes(searchQuery))
+      return false;
+
+    // 2. Active Filters
+    for (const [key, val] of Object.entries(activeFilters)) {
+      if (!val) continue;
+
+      let itemVal = item[key];
+      // Fallback: If key is 'socketId', check for 'socket' object
+      if (itemVal === undefined && key.endsWith("Id")) {
+        const altKey = key.slice(0, -2);
+        itemVal = item[altKey];
+      }
+
+      let actualVal = itemVal;
+      if (typeof itemVal === "object" && itemVal !== null) {
+        actualVal = itemVal.id || itemVal.name;
+      }
+
+      if (String(actualVal) !== String(val)) return false;
+    }
+
+    return true;
+  });
+
+  renderPickerPage();
 }
 
 function renderPickerPage() {
