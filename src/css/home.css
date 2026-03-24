@@ -547,16 +547,87 @@ body {
 }
 
 .results-stats {
-    margin-bottom: 24px;
+    margin-bottom: 12px;
     color: #6c757d;
     font-size: 14px;
-    border-bottom: 1px solid #f3f4f5;
     padding-bottom: 12px;
+}
+
+.category-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f3f4f5;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 160px;
+}
+
+.filter-group label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filter-group select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    background: #f8fafc;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-group select:focus {
+    border-color: #0059bb;
+    background: white;
+}
+
+.pagination {
+    margin-top: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+}
+
+.btn-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-circle:hover:not(:disabled) {
+    border-color: #0059bb;
+    color: #0059bb;
+    transform: scale(1.05);
+}
+
+.btn-circle:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .parts-list {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr)); /* Use minmax(0, 1fr) to allow ellipsis */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 20px;
 }
 
