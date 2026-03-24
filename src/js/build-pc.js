@@ -919,6 +919,18 @@ function updateSummaryView(result) {
 }
 
 async function analyzeBottleneck() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    showConfirm(
+      "Yêu cầu Đăng nhập",
+      "Bạn cần đăng nhập để sử dụng tính năng phân tích Bottleneck. Bạn có muốn đăng nhập ngay?",
+      () => {
+        window.location.href = "login.html";
+      },
+    );
+    return;
+  }
+
   if (!buildState.cpuId || !buildState.vgaId) {
     triggerToast("Thiếu linh kiện trọng yếu (CPU/VGA)", "error");
     return;
@@ -1057,9 +1069,10 @@ async function openGamePicker() {
 function renderGamePage(query = "") {
   const list = document.getElementById("game-picker-items");
   list.innerHTML = "";
-  const filtered = allGames.filter((g) =>
-    g.name.toLowerCase().includes(query.toLowerCase()),
-  );
+  const filtered = allGames.filter((g) => {
+    const name = (g.name || g.gameName || "").toLowerCase();
+    return name.includes(query.toLowerCase());
+  });
   const totalPages = Math.ceil(filtered.length / G_PER_PAGE) || 1;
   document.getElementById("game-page-info").innerText =
     `Trang ${gamePage} / ${totalPages}`;
@@ -1075,8 +1088,8 @@ function renderGamePage(query = "") {
             <div class="game-checkbox-overlay ${isSelected ? "active" : ""}">
                 <i class="fas fa-check"></i>
             </div>
-            <img src="${game.coverImageUrl || "https://via.placeholder.com/150x200"}" alt="${game.name}">
-            <div class="game-name-label">${game.name}</div>
+            <img src="${game.coverImageUrl || "https://via.placeholder.com/150x200"}" alt="${game.name || game.gameName}">
+            <div class="game-name-label">${game.name || game.gameName || "N/A"}</div>
         `;
     card.onclick = () => toggleGameTempSelection(game.id);
     list.appendChild(card);
@@ -1130,8 +1143,8 @@ function renderSelectedGamesList() {
     .map(
       (game) => `
         <div class="selected-game-item" id="sel-game-${game.id}">
-            <img src="${game.coverImageUrl || "https://via.placeholder.com/32"}" alt="">
-            <div class="game-name">${game.name}</div>
+            <img src="${game.coverImageUrl || "https://via.placeholder.com/32"}" alt="${game.name || game.gameName}">
+            <div class="game-name">${game.name || game.gameName || "N/A"}</div>
             <div class="game-status-badge" id="status-badge-${game.id}"></div>
             <button class="remove-game" onclick="removeSelectedGame('${game.id}')"><i class="fas fa-times"></i></button>
         </div>
@@ -1152,6 +1165,18 @@ function removeSelectedGame(id) {
 
 // Multi-Compatibility Check
 async function checkMultiCompatibility() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    showConfirm(
+      "Yêu cầu Đăng nhập",
+      "Bạn cần đăng nhập để sử dụng tính năng kiểm tra cấu hình Game. Bạn có muốn đăng nhập ngay?",
+      () => {
+        window.location.href = "login.html";
+      },
+    );
+    return;
+  }
+
   if (!buildState.cpuId) {
     triggerToast("Bạn chưa chọn CPU để kiểm tra tương thích!", "error");
     return;
@@ -1208,6 +1233,18 @@ async function checkMultiCompatibility() {
 
 // Multi-FPS Estimation
 async function estimateMultiFPS() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    showConfirm(
+      "Yêu cầu Đăng nhập",
+      "Bạn cần đăng nhập để sử dụng tính năng ước tính FPS. Bạn có muốn đăng nhập ngay?",
+      () => {
+        window.location.href = "login.html";
+      },
+    );
+    return;
+  }
+
   console.log("estimateMultiFPS called");
   if (!buildState.cpuId) {
     triggerToast("Bạn chưa chọn CPU để ước tính FPS!", "error");
@@ -1268,6 +1305,18 @@ async function estimateMultiFPS() {
 }
 
 async function checkAllGames() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    showConfirm(
+      "Yêu cầu Đăng nhập",
+      "Bạn cần đăng nhập để sử dụng được chức năng này. Bạn có muốn đăng nhập ngay?",
+      () => {
+        window.location.href = "login.html";
+      },
+    );
+    return;
+  }
+
   if (!buildState.cpuId) {
     triggerToast("Bạn chưa chọn CPU để kiểm tra toàn bộ game!", "error");
     return;
@@ -1315,7 +1364,7 @@ async function checkAllGames() {
                 <div class="game-res-card">
                     <img src="${g.coverImageUrl}" alt="${g.gameName}">
                     <div class="game-res-info">
-                        <div class="game-res-name">${g.gameName}</div>
+                        <div class="game-res-name">${g.gameName || g.name || "N/A"}</div>
                         <div class="game-res-detail">${g.detail}</div>
                     </div>
                     <span class="status-tag ${statusClass}">${g.status}</span>
