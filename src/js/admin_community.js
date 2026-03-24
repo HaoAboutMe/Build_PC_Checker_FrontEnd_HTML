@@ -255,16 +255,17 @@ const ENTITIES = {
     subtitle: "Quản lý người dùng và tài khoản hệ thống",
     fields: [
       { k: "username", l: "Username", t: "text", req: true },
-      { k: "email", l: "Email", t: "text", req: true },
       { k: "firstname", l: "First Name", t: "text" },
       { k: "lastname", l: "Last Name", t: "text" },
-      { k: "enabled", l: "Enabled", t: "checkbox" },
+      { k: "dateOfBirth", l: "Ngày sinh", t: "date" },
+      { k: "roles", l: "Vai trò", t: "lookup-multi", ref: "role" },
     ],
   },
   role: {
     url: "/roles",
     title: "Roles",
     subtitle: "Định nghĩa vai trò và phân quyền",
+    isLookup: true,
     fields: [
       { k: "name", l: "Tên Vai trò", t: "text", req: true },
       { k: "description", l: "Mô tả", t: "text" },
@@ -416,12 +417,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     const me = await apiCall("/users/me");
     const user = me.result || me;
-    
+
     // Check for ADMIN role explicitly
-    const roles = (user.roles || []).map(r => r.name || r);
-    if (!roles.includes('ADMIN')) {
-        window.location.href = '403.html';
-        return;
+    const roles = (user.roles || []).map((r) => r.name || r);
+    if (!roles.includes("ADMIN")) {
+      window.location.href = "403.html";
+      return;
     }
 
     const displayName = document.getElementById("admin-display-name");
@@ -554,6 +555,7 @@ function renderTable(data) {
               "imageUrl",
               "description",
               "coverImageUrl",
+              "roles",
             ].includes(f.k),
         )
         .map((f) => {
@@ -574,6 +576,17 @@ function renderTable(data) {
         .slice(0, 5)
         .join(" ");
 
+      // Additional logic for User roles display
+      let roleInfo = "";
+      if (currentEntity === "user") {
+        const rolesArr = item.roles || [];
+        const roleNames = rolesArr.map((r) => r.name || r).join(", ");
+        const displayRoles = roleNames || "USER";
+        roleInfo = `<span class="pc-chip chip-blue"><strong>Vai trò:</strong> ${displayRoles}</span>`;
+      }
+
+      const finalInfo = (roleInfo ? roleInfo + " " : "") + info;
+
       const avatar =
         item.imageUrl ||
         item.coverImageUrl ||
@@ -592,7 +605,7 @@ function renderTable(data) {
                         </div>
                     </div>
                 </td>
-                <td><div class="info-chips-wrap" style="display:flex; flex-wrap:wrap; gap:4px;">${info}</div></td>
+                <td><div class="info-chips-wrap" style="display:flex; flex-wrap:wrap; gap:4px;">${finalInfo}</div></td>
                 <td>
                     <div class="action-btns">
                         <button class="icon-btn btn-edit-v2" onclick="editItem('${item.id || item.name}')">
@@ -667,7 +680,10 @@ async function openEditor(itemId) {
         : "";
 
     let inputHtml = "";
-    if (f.k.toLowerCase().includes("imageurl") || f.k.toLowerCase().includes("coverimageurl")) {
+    if (
+      f.k.toLowerCase().includes("imageurl") ||
+      f.k.toLowerCase().includes("coverimageurl")
+    ) {
       inputHtml = `
                     <input type="hidden" id="field-${f.k}" value="${val}" ${f.req ? "required" : ""}>
                     <label class="image-upload-label">
@@ -693,7 +709,7 @@ async function openEditor(itemId) {
         .map(
           (o) => `
                 <label style="display:block; font-weight: 400; margin-bottom:4px;">
-                    <input type="checkbox" name="field-${f.k}" value="${o.id}" ${currentIds.includes(o.id) ? "checked" : ""}> ${o.name}
+                    <input type="checkbox" name="field-${f.k}" value="${o.id || o.name}" ${currentIds.includes(o.id || o.name) ? "checked" : ""}> ${o.name}
                 </label>
              `,
         )
@@ -765,7 +781,14 @@ function flattenItemData(item, config) {
     } else if (f.t === "lookup-multi") {
       const objKey = f.k.replace("Ids", "s");
       if (Array.isArray(item[objKey])) {
-        res[f.k] = item[objKey].map((i) => i.id || i.name);
+        // Handle both objects {id/name} or simple strings
+        res[f.k] = item[objKey].map((i) => {
+          if (typeof i === "object") return i.id || i.name;
+          // If it's a string, try to find the ID by name in lookups
+          const lookupData = lookups[f.ref] || [];
+          const found = lookupData.find((l) => l.name === i || l.id === i);
+          return found ? found.id || found.name : i;
+        });
       }
     }
   });
@@ -879,7 +902,7 @@ async function apiCall(endpoint, options = {}, retryCount = 0) {
 
   // Handle Forbidden (User is logged in but has no permission)
   if (data.code === 1008) {
-    window.location.href = '403.html';
+    window.location.href = "403.html";
     return;
   }
 
