@@ -214,23 +214,41 @@
                             <h3><i class="fas fa-gamepad"></i> Tương thích Game</h3>
                         </div>
                         <div class="selected-games-container" id="selected-games-list">
-                            <div class="empty-games-placeholder">Chưa chọn game</div>
+                            <div class="empty-games-placeholder">Chưa có game nào được chọn</div>
                         </div>
-                        <button class="btn-secondary w-100 mb-3" id="view-game-list-btn"><i class="fas fa-plus"></i> Chọn Games</button>
+                        <button class="btn-secondary w-100 mb-3" id="view-game-list-btn">
+                            <i class="fas fa-plus"></i> Chọn Games (0)
+                        </button>
                         
+                        <!-- Resolution Selector -->
                         <div class="resolution-selector-sidebar" id="resolution-selector-wrap" style="display: none;">
                              <div class="res-options-flex">
-                                <label class="res-radio"><input type="radio" name="res-choice" value="1080p" checked><span>1080p</span></label>
-                                <label class="res-radio"><input type="radio" name="res-choice" value="2k"><span>2K</span></label>
-                                <label class="res-radio"><input type="radio" name="res-choice" value="4k"><span>4K</span></label>
+                                <label class="res-radio">
+                                    <input type="radio" name="res-choice" value="1080p" checked>
+                                    <span>1080p</span>
+                                </label>
+                                <label class="res-radio">
+                                    <input type="radio" name="res-choice" value="2k">
+                                    <span>2K</span>
+                                </label>
+                                <label class="res-radio">
+                                    <input type="radio" name="res-choice" value="4k">
+                                    <span>4K</span>
+                                </label>
                             </div>
                         </div>
 
-                        <div class="game-actions" id="game-actions" style="display: none; flex-direction: column; gap: 4px; margin-top: 16px;">
-                            <button class="btn-primary w-100" id="check-multi-compat-btn">Kiểm tra đề nghị</button>
-                            <button class="btn-primary w-100" id="check-multi-fps-btn" style="background:#8b5cf6; border:none;">Ước tính FPS</button>
+                        <div class="game-actions" id="game-actions" style="display: none;">
+                            <button class="btn-primary w-100 mb-2" id="check-multi-compat-btn">
+                                <i class="fas fa-check-double"></i> Kiểm tra cấu hình
+                            </button>
+                            <button class="btn-primary w-100" id="check-multi-fps-btn" style="background:var(--accent); border:none;">
+                                <i class="fas fa-chart-line"></i> Ước tính FPS
+                            </button>
                         </div>
-                        <button class="btn-primary w-100" id="check-all-games-btn" style="margin-top: 4px;">Kiểm tra tất cả</button>
+                        <button class="btn-primary w-100" id="check-all-games-btn" style="margin-top: 4px;">
+                            <i class="fas fa-rocket"></i> Kiểm tra tất cả Game
+                        </button>
                     </div>
                 </aside>
             </div>
@@ -246,10 +264,13 @@
             </div>
             <div id="picker-list-view">
                 <div class="search-bar"><i class="fas fa-search"></i><input type="text" id="picker-search" placeholder="Tìm kiếm..."></div>
+                <div class="picker-filters" id="picker-filters">
+                    <!-- Dynamic filters injected here -->
+                </div>
                 <div class="picker-items" id="picker-items"></div>
                 <div class="pagination">
                     <button class="btn-circle" id="page-prev-btn"><i class="fas fa-chevron-left"></i></button>
-                    <span id="page-info">Trang 1</span>
+                    <span id="page-info">Trang 1 / 1</span>
                     <button class="btn-circle" id="page-next-btn"><i class="fas fa-chevron-right"></i></button>
                 </div>
             </div>
