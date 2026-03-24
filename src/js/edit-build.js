@@ -5,6 +5,9 @@
 
 const API_BASE_URL = "http://localhost:8080/identity";
 
+let isRefreshing = false;
+let refreshPromise = null;
+
 // Global State
 const buildState = {
   cpuId: null,
@@ -18,7 +21,7 @@ const buildState = {
   coolerId: null,
   selectedGameIds: [],
   selectedGames: [],
-  
+
   // Edit-specific metadata
   buildId: null,
   initialData: null,
@@ -49,24 +52,70 @@ let activeFilters = {};
 // Component Definitions
 const componentsConfig = [
   { id: "cpu", name: "Bộ xử lý (CPU)", api: "/cpus", icon: "fas fa-microchip" },
-  { id: "mainboard", name: "Bo mạch chủ (Mainboard)", api: "/mainboards", icon: "fas fa-square" },
+  {
+    id: "mainboard",
+    name: "Bo mạch chủ (Mainboard)",
+    api: "/mainboards",
+    icon: "fas fa-square",
+  },
   { id: "ram", name: "Bộ nhớ RAM", api: "/rams", icon: "fas fa-memory" },
   { id: "vga", name: "Card đồ họa (VGA)", api: "/vgas", icon: "fas fa-video" },
-  { id: "ssd", name: "Ổ cứng SSD", api: "/ssds", multi: true, icon: "fas fa-hdd" },
-  { id: "hdd", name: "Ổ cứng HDD", api: "/hdds", multi: true, icon: "fas fa-compact-disc" },
-  { id: "psu", name: "Nguồn máy tính (PSU)", api: "/psus", icon: "fas fa-plug" },
-  { id: "cooler", name: "Tản nhiệt (Cooler)", api: "/coolers", icon: "fas fa-fan" },
+  {
+    id: "ssd",
+    name: "Ổ cứng SSD",
+    api: "/ssds",
+    multi: true,
+    icon: "fas fa-hdd",
+  },
+  {
+    id: "hdd",
+    name: "Ổ cứng HDD",
+    api: "/hdds",
+    multi: true,
+    icon: "fas fa-compact-disc",
+  },
+  {
+    id: "psu",
+    name: "Nguồn máy tính (PSU)",
+    api: "/psus",
+    icon: "fas fa-plug",
+  },
+  {
+    id: "cooler",
+    name: "Tản nhiệt (Cooler)",
+    api: "/coolers",
+    icon: "fas fa-fan",
+  },
   { id: "case", name: "Vỏ máy tính (Case)", api: "/cases", icon: "fas fa-box" },
 ];
 
 const LABEL_MAP = {
-  socket: "Socket", tdp: "Công suất (TDP)", tdpSupport: "Hỗ trợ TDP", pcieVersion: "PCIe",
-  vrmMin: "VRM Min", igpu: "iGPU", ramType: "Loại RAM", ramBusMax: "Bus MAX",
-  vramGb: "VRAM", capacity: "Dung lượng", wattage: "Công suất", efficiency: "Chuẩn",
-  busWidth: "Băng thông", memoryType: "Dòng bộ nhớ", clockSpeed: "Xung nhịp",
-  coreCount: "Số nhân", threadCount: "Số luồng", lithography: "Tiến trình",
-  l3Cache: "L3 Cache", socketId: "Socket", ramTypeId: "Loại RAM", pcieVersionId: "PCIe",
-  sizeId: "Kích cỡ", coolerTypeId: "Loại tản", ssdTypeId: "Loại SSD", formFactorId: "Kích thước"
+  socket: "Socket",
+  tdp: "Công suất (TDP)",
+  tdpSupport: "Hỗ trợ TDP",
+  pcieVersion: "PCIe",
+  vrmMin: "VRM Min",
+  igpu: "iGPU",
+  ramType: "Loại RAM",
+  ramBusMax: "Bus MAX",
+  vramGb: "VRAM",
+  capacity: "Dung lượng",
+  wattage: "Công suất",
+  efficiency: "Chuẩn",
+  busWidth: "Băng thông",
+  memoryType: "Dòng bộ nhớ",
+  clockSpeed: "Xung nhịp",
+  coreCount: "Số nhân",
+  threadCount: "Số luồng",
+  lithography: "Tiến trình",
+  l3Cache: "L3 Cache",
+  socketId: "Socket",
+  ramTypeId: "Loại RAM",
+  pcieVersionId: "PCIe",
+  sizeId: "Kích cỡ",
+  coolerTypeId: "Loại tản",
+  ssdTypeId: "Loại SSD",
+  formFactorId: "Kích thước",
 };
 
 function formatLabel(key) {
@@ -74,111 +123,156 @@ function formatLabel(key) {
 }
 
 const UNIT_MAP = {
-  tdp: "W", tdpSupport: "W", wattage: "W", ramBus: "MHz", vramGb: "GB", capacity: "GB"
+  tdp: "W",
+  tdpSupport: "W",
+  wattage: "W",
+  ramBus: "MHz",
+  vramGb: "GB",
+  capacity: "GB",
 };
 
 /**
  * INITIALIZATION
  */
 document.addEventListener("DOMContentLoaded", async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    buildState.buildId = urlParams.get("id");
+  // 0. Immediate Token Check
+  const token = localStorage.getItem("token");
+  console.log("[Edit-Build] Checking token...", token ? "Found" : "Missing");
 
-    if (!buildState.buildId) {
-        triggerToast("Không tìm thấy mã cấu hình", "error");
-        setTimeout(() => window.location.href = "my-builds.html", 1500);
-        return;
-    }
+  if (!token || token === "undefined" || token === "null") {
+    window.location.href = "login.html";
+    return;
+  }
 
-    // 1. UI Setup
-    initBuildSlots();
-    setupCoreEvents();
-    setupGameEvents();
+  const urlParams = new URLSearchParams(window.location.search);
+  buildState.buildId = urlParams.get("id");
 
-    // 2. Load User Profile
-    await loadUserInfo();
+  if (!buildState.buildId) {
+    triggerToast("Không tìm thấy mã cấu hình", "error");
+    setTimeout(() => (window.location.href = "my-builds.html"), 1500);
+    return;
+  }
 
-    // 3. Load Existing Build Data
-    await loadBuildToEdit();
+  // 1. UI Setup
+  initBuildSlots();
+  setupCoreEvents();
+  setupGameEvents();
+
+  // 2. Load User Profile
+  console.log("[Edit-Build] Loading User Info...");
+  await loadUserInfo();
+
+  // 3. Load Existing Build Data
+  console.log("[Edit-Build] Loading Build Data...");
+  await loadBuildToEdit();
 });
 
 async function loadBuildToEdit() {
-    const res = await apiCall(`/builds/${buildState.buildId}`);
-    if ((res.code === 0 || res.code === 1000) && res.result) {
-        const build = res.result;
-        buildState.initialData = JSON.parse(JSON.stringify(build));
+  console.log("[Edit-Build] Fetching build ID:", buildState.buildId);
+  const res = await apiCall(`/builds/${buildState.buildId}`);
+  console.log("[Edit-Build] Load Data Response:", res);
 
-        // Set Top Info
-        document.getElementById("edit-build-name").value = build.name || "";
-        document.getElementById("edit-build-desc").value = build.description || "";
+  if ((res.code === 0 || res.code === 1000) && res.result) {
+    const build = res.result;
+    buildState.initialData = JSON.parse(JSON.stringify(build));
 
-        // Map Parts to Internal State & UI
-        const parts = build.parts || {};
-        const keyMap = {
-            "CPU": "cpu", "MAINBOARD": "mainboard", "RAM": "ram", 
-            "VGA": "vga", "GPU": "vga", "PSU": "psu", "CASE": "case", 
-            "COOLER": "cooler", "SSD": "ssd", "HDD": "hdd"
-        };
+    // Set Top Info
+    document.getElementById("edit-build-name").value = build.name || "";
+    document.getElementById("edit-build-desc").value = build.description || "";
 
-        for (const [partKey, partData] of Object.entries(parts)) {
-            const configId = keyMap[partKey];
-            if (!configId) continue;
+    // Map Parts to Internal State & UI
+    const parts = build.parts || {};
+    // Ensure case-insensitivity by supporting both versions
+    const keyMap = {
+      cpu: "cpu", cpu: "cpu",
+      mainboard: "mainboard", mainboard: "mainboard",
+      ram: "ram", ram: "ram",
+      vga: "vga", vga: "vga", gpu: "vga",
+      psu: "psu", psu: "psu",
+      case: "case", case: "case",
+      cooler: "cooler", cooler: "cooler",
+      ssd: "ssd", ssd: "ssd",
+      hdd: "hdd", hdd: "hdd",
+      CPU: "cpu", MAINBOARD: "mainboard", RAM: "ram", 
+      VGA: "vga", GPU: "vga", PSU: "psu", CASE: "case", 
+      COOLER: "cooler", SSD: "ssd", HDD: "hdd"
+    };
 
-            const comp = componentsConfig.find(c => c.id === configId);
-            if (comp.multi) {
-                buildState[`${configId}Ids`] = [partData.id];
-            } else {
-                buildState[`${configId}Id`] = partData.id;
-            }
-            
-            // Render Slot
-            renderSlotContent(document.getElementById(`slot-${configId}`), comp, partData);
-        }
+    console.log("[Edit-Build] Mapping parts:", parts);
+    for (const [partKey, partData] of Object.entries(parts)) {
+      if (!partData) continue;
+      
+      const configId = keyMap[partKey];
+      if (!configId) {
+         console.warn("[Edit-Build] No mapping for part key:", partKey);
+         continue;
+      }
 
-        // Initial check once loaded
-        checkCompatibility();
-    } else {
-        triggerToast("Lỗi tải thông tin cấu hình", "error");
+      const comp = componentsConfig.find((c) => c.id === configId);
+      if (comp.multi) {
+        buildState[`${configId}Ids`] = [partData.id];
+      } else {
+        buildState[`${configId}Id`] = partData.id;
+      }
+
+      // Render Slot
+      const slotEl = document.getElementById(`slot-${configId}`);
+      if (slotEl) {
+          renderSlotContent(slotEl, comp, partData);
+      }
     }
+
+    // Initial check once loaded
+    checkCompatibility();
+  } else {
+    console.error("[Edit-Build] Error loading build:", res.message || "No data");
+    triggerToast(`Lỗi tải dữ liệu: ${res.message || "Dữ liệu trống"}`, "error");
+    if (res.code === 1005 || res.code === 403) {
+         localStorage.removeItem("token");
+         window.location.href = "login.html";
+    }
+  }
 }
 
 /**
  * CORE EVENTS (Copied from build-pc.js)
  */
 function setupCoreEvents() {
-    document.getElementById("close-picker-btn").onclick = closePicker;
-    document.getElementById("restore-original-btn").onclick = restoreOriginal;
-    document.getElementById("check-bottleneck-btn").onclick = analyzeBottleneck;
-    document.getElementById("update-build-btn").onclick = handleUpdateBuild;
-    document.getElementById("check-all-games-btn").onclick = checkAllGameCompatibility;
+  document.getElementById("close-picker-btn").onclick = closePicker;
+  document.getElementById("restore-original-btn").onclick = restoreOriginal;
+  document.getElementById("check-bottleneck-btn").onclick = analyzeBottleneck;
+  document.getElementById("update-build-btn").onclick = handleUpdateBuild;
 
-    // Search & Pagination in Picker
-    document.getElementById("picker-search").oninput = (e) => {
-        pickerPage = 1;
-        applyFilters();
-    };
+  // Search & Pagination in Picker
+  document.getElementById("picker-search").oninput = (e) => {
+    pickerPage = 1;
+    applyFilters();
+  };
 
-    document.getElementById("page-prev-btn").onclick = () => {
-        if(pickerPage > 1) { 
-            pickerPage--; 
-            renderPickerPage(); 
-            document.getElementById("picker-items").scrollTop = 0;
-        }
-    };
-    document.getElementById("page-next-btn").onclick = () => {
-        if(pickerPage < Math.ceil(filteredItems.length / 8)) { 
-            pickerPage++; 
-            renderPickerPage(); 
-            document.getElementById("picker-items").scrollTop = 0;
-        }
-    };
-    
-    document.getElementById("detail-back-btn").onclick = () => {
-        document.getElementById("picker-list-view").style.display = "block";
-        document.getElementById("picker-detail-view").style.display = "none";
-    };
+  document.getElementById("page-prev-btn").onclick = () => {
+    if (pickerPage > 1) {
+      pickerPage--;
+      renderPickerPage();
+      document.getElementById("picker-items").scrollTop = 0;
+    }
+  };
+  document.getElementById("page-next-btn").onclick = () => {
+    if (pickerPage < Math.ceil(filteredItems.length / 8)) {
+      pickerPage++;
+      renderPickerPage();
+      document.getElementById("picker-items").scrollTop = 0;
+    }
+  };
 
-    document.getElementById("logout-btn").onclick = () => { localStorage.removeItem("token"); window.location.href="login.html"; };
+  document.getElementById("detail-back-btn").onclick = () => {
+    document.getElementById("picker-list-view").style.display = "block";
+    document.getElementById("picker-detail-view").style.display = "none";
+  };
+
+  document.getElementById("logout-btn").onclick = () => {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+  };
 }
 
 /**
@@ -243,7 +337,7 @@ function updatePartsCount() {
   if (buildState.psuId) count++;
   if (buildState.caseId) count++;
   if (buildState.coolerId) count++;
-  count += (buildState.ssdIds.length + buildState.hddIds.length);
+  count += buildState.ssdIds.length + buildState.hddIds.length;
   document.getElementById("parts-count").innerText = `${count}/9 linh kiện`;
 }
 
@@ -256,15 +350,16 @@ let filteredItems = [];
 let pickerPage = 1;
 
 async function openPicker(compId) {
-  const comp = componentsConfig.find(c => c.id === compId);
+  const comp = componentsConfig.find((c) => c.id === compId);
   currentPickerComp = comp;
   pickerPage = 1;
   activeFilters = {}; // Reset filters
-  
+
   document.getElementById("picker-title").innerText = `Chọn ${comp.name}`;
   document.getElementById("picker-search").value = "";
   document.getElementById("picker-filters").innerHTML = ""; // Clear filters UI
-  document.getElementById("picker-items").innerHTML = '<div class="w-100 text-center py-5"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>';
+  document.getElementById("picker-items").innerHTML =
+    '<div class="w-100 text-center py-5"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>';
   document.getElementById("picker-modal").classList.add("active");
   document.getElementById("picker-list-view").style.display = "block";
   document.getElementById("picker-detail-view").style.display = "none";
@@ -375,7 +470,8 @@ function applyFilters() {
 
 function renderPickerPage() {
   const totalPages = Math.ceil(filteredItems.length / 8) || 1;
-  document.getElementById("page-info").innerText = `Trang ${pickerPage} / ${totalPages}`;
+  document.getElementById("page-info").innerText =
+    `Trang ${pickerPage} / ${totalPages}`;
   document.getElementById("page-prev-btn").disabled = pickerPage <= 1;
   document.getElementById("page-next-btn").disabled = pickerPage >= totalPages;
 
@@ -390,7 +486,7 @@ function renderPickerPage() {
     return;
   }
 
-  items.forEach(item => {
+  items.forEach((item) => {
     const card = document.createElement("div");
     card.className = "part-card";
     card.innerHTML = `
@@ -401,8 +497,14 @@ function renderPickerPage() {
             <button class="btn-secondary flex-1 btn-card-detail" style="background:#f1f5f9; border:none; padding:6px; border-radius:6px; font-size:12px; cursor:pointer;">Chi tiết</button>
         </div>
     `;
-    card.querySelector(".btn-card-select").onclick = (e) => { e.stopPropagation(); selectPart(item); };
-    card.querySelector(".btn-card-detail").onclick = (e) => { e.stopPropagation(); showDetail(item); };
+    card.querySelector(".btn-card-select").onclick = (e) => {
+      e.stopPropagation();
+      selectPart(item);
+    };
+    card.querySelector(".btn-card-detail").onclick = (e) => {
+      e.stopPropagation();
+      showDetail(item);
+    };
     container.appendChild(card);
   });
 }
@@ -415,8 +517,17 @@ function showDetail(item) {
   // Construct Specs Grid dynamically
   let specsHtml = "";
   const excludedFields = [
-    "score", "id", "imageUrl", "coverImageUrl", "name", 
-    "description", "enabled", "deleted", "code", "result", "message"
+    "score",
+    "id",
+    "imageUrl",
+    "coverImageUrl",
+    "name",
+    "description",
+    "enabled",
+    "deleted",
+    "code",
+    "result",
+    "message",
   ];
 
   Object.entries(item).forEach(([key, value]) => {
@@ -431,7 +542,11 @@ function showDetail(item) {
     }
 
     // Apply Units
-    if (UNIT_MAP[key] && (typeof displayValue === "number" || (!isNaN(displayValue) && displayValue !== ""))) {
+    if (
+      UNIT_MAP[key] &&
+      (typeof displayValue === "number" ||
+        (!isNaN(displayValue) && displayValue !== ""))
+    ) {
       displayValue = `${displayValue} ${UNIT_MAP[key]}`;
     }
 
@@ -487,14 +602,16 @@ function selectPart(item) {
 }
 
 function removePart(compId) {
-  const comp = componentsConfig.find(c => c.id === compId);
+  const comp = componentsConfig.find((c) => c.id === compId);
   if (comp.multi) buildState[`${comp.id}Ids`] = [];
   else buildState[`${comp.id}Id`] = null;
   renderSlotContent(document.getElementById(`slot-${comp.id}`), comp, null);
   checkCompatibility();
 }
 
-function closePicker() { document.getElementById("picker-modal").classList.remove("active"); }
+function closePicker() {
+  document.getElementById("picker-modal").classList.remove("active");
+}
 
 /**
  * COMPATIBILITY & ANALYSIS
@@ -511,7 +628,10 @@ async function checkCompatibility() {
   if (buildState.ssdIds.length > 0) payload.ssdIds = buildState.ssdIds;
   if (buildState.hddIds.length > 0) payload.hddIds = buildState.hddIds;
 
-  if (Object.keys(payload).length === 0) { resetSummaryView(); return; }
+  if (Object.keys(payload).length === 0) {
+    resetSummaryView();
+    return;
+  }
 
   const res = await apiCall("/builds/check-compatibility", "POST", payload);
   if (res.code === 1000 && res.result) {
@@ -546,19 +666,20 @@ function updateSummaryView(result) {
     title.innerText = "Tương thích hoàn hảo";
     desc.innerText = "Mọi linh kiện đã khớp nhau!";
   }
-  document.getElementById("psu-recommend-value").innerText = `${result.recommendedPsuWattage || 0}W`;
-  
+  document.getElementById("psu-recommend-value").innerText =
+    `${result.recommendedPsuWattage || 0}W`;
+
   const eGrp = document.getElementById("error-group");
   const eList = document.getElementById("error-list");
   if (result.errors?.length > 0) {
-    eList.innerHTML = result.errors.map(m => `<li>${m}</li>`).join("");
+    eList.innerHTML = result.errors.map((m) => `<li>${m}</li>`).join("");
     eGrp.style.display = "block";
   } else eGrp.style.display = "none";
 
   const wGrp = document.getElementById("warning-group");
   const wList = document.getElementById("warning-list");
   if (result.warnings?.length > 0) {
-    wList.innerHTML = result.warnings.map(m => `<li>${m}</li>`).join("");
+    wList.innerHTML = result.warnings.map((m) => `<li>${m}</li>`).join("");
     wGrp.style.display = "block";
   } else wGrp.style.display = "none";
 }
@@ -616,39 +737,42 @@ async function analyzeBottleneck() {
  * UPDATE BUILD (PUT)
  */
 async function handleUpdateBuild() {
-    const name = document.getElementById("edit-build-name").value.trim();
-    if (!name) { triggerToast("Vui lòng nhập tên", "warning"); return; }
+  const name = document.getElementById("edit-build-name").value.trim();
+  if (!name) {
+    triggerToast("Vui lòng nhập tên", "warning");
+    return;
+  }
 
-    const btn = document.getElementById("update-build-btn");
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang cập nhật...';
+  const btn = document.getElementById("update-build-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang cập nhật...';
 
-    const parts = {};
-    if (buildState.cpuId) parts.cpu = buildState.cpuId;
-    if (buildState.mainboardId) parts.mainboard = buildState.mainboardId;
-    if (buildState.ramId) parts.ram = buildState.ramId;
-    if (buildState.vgaId) parts.gpu = buildState.vgaId;
-    if (buildState.psuId) parts.psu = buildState.psuId;
-    if (buildState.caseId) parts.case = buildState.caseId;
-    if (buildState.coolerId) parts.cooler = buildState.coolerId;
-    if (buildState.ssdIds.length > 0) parts.ssd = buildState.ssdIds[0];
-    if (buildState.hddIds.length > 0) parts.hdd = buildState.hddIds[0];
+  const parts = {};
+  if (buildState.cpuId) parts.cpu = buildState.cpuId;
+  if (buildState.mainboardId) parts.mainboard = buildState.mainboardId;
+  if (buildState.ramId) parts.ram = buildState.ramId;
+  if (buildState.vgaId) parts.gpu = buildState.vgaId;
+  if (buildState.psuId) parts.psu = buildState.psuId;
+  if (buildState.caseId) parts.case = buildState.caseId;
+  if (buildState.coolerId) parts.cooler = buildState.coolerId;
+  if (buildState.ssdIds.length > 0) parts.ssd = buildState.ssdIds[0];
+  if (buildState.hddIds.length > 0) parts.hdd = buildState.hddIds[0];
 
-    const payload = {
-        name: name,
-        description: document.getElementById("edit-build-desc").value,
-        parts: parts
-    };
+  const payload = {
+    name: name,
+    description: document.getElementById("edit-build-desc").value,
+    parts: parts,
+  };
 
-    const res = await apiCall(`/builds/${buildState.buildId}`, "PUT", payload);
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Cập nhật ngay';
+  const res = await apiCall(`/builds/${buildState.buildId}`, "PUT", payload);
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Cập nhật ngay';
 
-    if (res.code === 1000 || res.code === 0) {
-        triggerToast("Cập nhật thành công!", "success");
-    } else {
-        triggerToast(res.message || "Lỗi cập nhật", "error");
-    }
+  if (res.code === 1000 || res.code === 0) {
+    triggerToast("Cập nhật thành công!", "success");
+  } else {
+    triggerToast(res.message || "Lỗi cập nhật", "error");
+  }
 }
 
 /**
@@ -667,6 +791,26 @@ function setupGameEvents() {
     .getElementById("close-game-picker-btn")
     .addEventListener("click", () =>
       document.getElementById("game-picker-modal").classList.remove("active"),
+    );
+  document
+    .getElementById("close-game-compat-list-btn")
+    .addEventListener("click", () =>
+      document.getElementById("game-compat-list-modal").classList.remove("active"),
+    );
+  document
+    .getElementById("close-fps-btn")
+    .addEventListener("click", () =>
+      document.getElementById("fps-modal").classList.remove("active"),
+    );
+  document
+    .getElementById("close-compat-error-btn")
+    .addEventListener("click", () =>
+      document.getElementById("compat-error-modal").classList.remove("active"),
+    );
+  document
+    .getElementById("confirm-compat-error-btn")
+    .addEventListener("click", () =>
+      document.getElementById("compat-error-modal").classList.remove("active"),
     );
   document
     .getElementById("confirm-game-selection-btn")
@@ -761,7 +905,8 @@ function toggleGameTempSelection(gameId) {
 }
 
 function updateGameSelCount() {
-  document.getElementById("game-sel-count").innerText = `Đã chọn ${tempSelectedGameIds.length} game`;
+  document.getElementById("game-sel-count").innerText =
+    `Đã chọn ${tempSelectedGameIds.length} game`;
 }
 
 function confirmGameSelection() {
@@ -782,7 +927,8 @@ function renderSelectedGamesList() {
   btnText.innerHTML = `<i class="fas fa-plus"></i> Chọn Games (${buildState.selectedGames.length})`;
 
   if (buildState.selectedGames.length === 0) {
-    container.innerHTML = '<div class="empty-games-placeholder">Chưa có game nào được chọn</div>';
+    container.innerHTML =
+      '<div class="empty-games-placeholder">Chưa có game nào được chọn</div>';
     actions.style.display = "none";
     resWrap.style.display = "none";
     return;
@@ -791,27 +937,43 @@ function renderSelectedGamesList() {
   resWrap.style.display = "block";
 
   container.innerHTML = buildState.selectedGames
-    .map((game) => `
+    .map(
+      (game) => `
         <div class="selected-game-item" id="sel-game-${game.id}">
             <img src="${game.coverImageUrl || "https://via.placeholder.com/32"}" alt="${game.name || game.gameName}">
             <div class="game-name">${game.name || game.gameName || "N/A"}</div>
             <div class="game-status-badge" id="status-badge-${game.id}"></div>
             <button class="remove-game" onclick="removeSelectedGame('${game.id}')"><i class="fas fa-times"></i></button>
         </div>
-    `).join("");
+    `,
+    )
+    .join("");
 }
 
 function removeSelectedGame(id) {
-  buildState.selectedGameIds = buildState.selectedGameIds.filter(gid => gid !== id);
-  buildState.selectedGames = buildState.selectedGames.filter(g => g.id !== id);
+  buildState.selectedGameIds = buildState.selectedGameIds.filter(
+    (gid) => gid !== id,
+  );
+  buildState.selectedGames = buildState.selectedGames.filter(
+    (g) => g.id !== id,
+  );
   renderSelectedGamesList();
 }
 
 async function checkMultiCompatibility() {
-  if (!buildState.cpuId || !buildState.vgaId || !buildState.ramId) {
-    triggerToast("Thiếu linh kiện trọng yếu (CPU/VGA/RAM)", "error");
+  if (!buildState.cpuId) {
+    triggerToast("Bạn chưa chọn CPU để kiểm tra tương thích!", "error");
     return;
   }
+  if (!buildState.vgaId) {
+    triggerToast("Bạn chưa chọn Card đồ họa (VGA) để kiểm tra tương thích!", "error");
+    return;
+  }
+  if (!buildState.ramId) {
+    triggerToast("Bạn chưa chọn RAM để kiểm tra tương thích!", "error");
+    return;
+  }
+
   if (buildState.selectedGames.length === 0) {
     triggerToast("Vui lòng chọn ít nhất một game", "warning");
     return;
@@ -828,7 +990,8 @@ async function checkMultiCompatibility() {
       ramId: buildState.ramId,
     });
     if (res.code === 1000 && res.result) {
-      const compatibility = res.result.compatibility || res.result.data?.compatibility;
+      const compatibility =
+        res.result.compatibility || res.result.data?.compatibility;
       const isRec = compatibility === "RECOMMENDED";
       badge.innerText = isRec ? "REC" : "MIN";
       badge.style.background = isRec ? "var(--success)" : "var(--accent)";
@@ -841,12 +1004,20 @@ async function checkMultiCompatibility() {
 }
 
 async function estimateMultiFPS() {
-  if (!buildState.cpuId || !buildState.vgaId) {
-    triggerToast("Thiếu CPU/VGA để ước tính FPS", "error");
+  if (!buildState.cpuId) {
+    triggerToast("Bạn chưa chọn CPU để ước tính FPS!", "error");
     return;
   }
+  if (!buildState.vgaId) {
+    triggerToast("Bạn chưa chọn Card đồ họa (VGA) để ước tính FPS!", "error");
+    return;
+  }
+
   const resInput = document.querySelector('input[name="res-choice"]:checked');
-  if (!resInput) { triggerToast("Vui lòng chọn độ phân giải", "warning"); return; }
+  if (!resInput) {
+    triggerToast("Vui lòng chọn độ phân giải", "warning");
+    return;
+  }
   const resolution = resInput.value;
 
   triggerToast(`Đang dự toán FPS (${resolution})...`, "info");
@@ -887,14 +1058,24 @@ async function estimateMultiFPS() {
 }
 
 async function checkAllGames() {
-  if (!buildState.cpuId || !buildState.vgaId || !buildState.ramId) {
-    triggerToast("Thiếu linh kiện trọng yếu", "error");
+  if (!buildState.cpuId) {
+    triggerToast("Bạn chưa chọn CPU để kiểm tra tương thích!", "error");
     return;
   }
+  if (!buildState.vgaId) {
+    triggerToast("Bạn chưa chọn Card đồ họa (VGA) để kiểm tra tương thích!", "error");
+    return;
+  }
+  if (!buildState.ramId) {
+    triggerToast("Bạn chưa chọn RAM để kiểm tra tương thích!", "error");
+    return;
+  }
+
   const modal = document.getElementById("game-compat-list-modal");
   modal.classList.add("active");
   const list = document.getElementById("game-compat-results");
-  list.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Đang kiểm tra...</p></div>';
+  list.innerHTML =
+    '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Đang kiểm tra...</p></div>';
 
   const res = await apiCall("/games/check-compatible", "POST", {
     cpuId: buildState.cpuId,
@@ -908,7 +1089,8 @@ async function checkAllGames() {
             <div class="summary-spec-card"><span class="label">GPU Score</span><span class="value">${res.result.pcSummary.gpuScore}</span></div>
             <div class="summary-spec-card"><span class="label">RAM</span><span class="value">${res.result.pcSummary.totalRamGb}GB</span></div>
         `;
-    list.innerHTML = res.result.results.map((g) => {
+    list.innerHTML = res.result.results
+      .map((g) => {
         const statusClass = g.status.toLowerCase();
         return `
             <div class="game-res-card">
@@ -920,98 +1102,150 @@ async function checkAllGames() {
                 <span class="status-tag ${statusClass}">${g.status}</span>
             </div>
         `;
-    }).join("");
+      })
+      .join("");
   }
 }
 
 function showConfirm(title, message, onOk) {
-    const modal = document.getElementById("custom-confirm-modal");
-    document.getElementById("confirm-title").innerText = title;
-    document.getElementById("confirm-message").innerText = message;
-    
-    modal.classList.add("active");
-    
-    const okBtn = document.getElementById("confirm-ok-btn");
-    const cancelBtn = document.getElementById("confirm-cancel-btn");
-    
-    okBtn.onclick = () => {
-        modal.classList.remove("active");
-        if (onOk) onOk();
-    };
-    
-    cancelBtn.onclick = () => {
-        modal.classList.remove("active");
-    };
+  const modal = document.getElementById("custom-confirm-modal");
+  document.getElementById("confirm-title").innerText = title;
+  document.getElementById("confirm-message").innerText = message;
+
+  modal.classList.add("active");
+
+  const okBtn = document.getElementById("confirm-ok-btn");
+  const cancelBtn = document.getElementById("confirm-cancel-btn");
+
+  okBtn.onclick = () => {
+    modal.classList.remove("active");
+    if (onOk) onOk();
+  };
+
+  cancelBtn.onclick = () => {
+    modal.classList.remove("active");
+  };
 }
 
 function restoreOriginal() {
-    showConfirm(
-        "Khôi phục cấu hình", 
-        "Bạn có chắc chắn muốn hủy bỏ mọi thay đổi và quay lại linh kiện ban đầu không?",
-        () => {
-            loadBuildToEdit().then(() => triggerToast("Đã khôi phục cấu hình gốc", "info"));
-        }
-    );
+  showConfirm(
+    "Khôi phục cấu hình",
+    "Bạn có chắc chắn muốn hủy bỏ mọi thay đổi và quay lại linh kiện ban đầu không?",
+    () => {
+      loadBuildToEdit().then(() =>
+        triggerToast("Đã khôi phục cấu hình gốc", "info"),
+      );
+    },
+  );
 }
 
 /**
  * SHARED UTILITIES
  */
 async function loadUserInfo() {
-    const token = localStorage.getItem("token");
-    const userBrief = document.getElementById("user-brief");
-    if(!token) { window.location.href="login.html"; return; }
-    
+  const token = localStorage.getItem("token");
+  const userBrief = document.getElementById("user-brief");
+  const adminNav = document.getElementById("admin-nav-item");
+
+  if (!token) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  try {
     const res = await apiCall("/users/me");
-    if(res.code === 1000 && res.result) {
-        const u = res.result;
-        const displayName = u.username || u.firstname || "Người dùng";
-        const init = displayName.substring(0,1).toUpperCase();
-        userBrief.innerHTML = `
-            <div class="user-avatar">${init}</div>
-            <div class="user-info">
-                <b>${displayName}</b><br>
-                <span>Thành viên</span>
-            </div>`;
-            
-        // Handle admin nav if exists on this page
-        const adminNav = document.getElementById("admin-nav-item");
-        const roles = (u.roles || []).map(r => r.name || r);
-        if (adminNav && roles.includes("ADMIN")) {
-            adminNav.style.display = "block";
-        }
-    } else if (res.code === 1007) {
-        // Token expired will be handled by apiCall/refreshToken
-        // but let's try to reload once we refreshed
-        await loadUserInfo(); 
+    if (res.code === 1000 && res.result) {
+      const u = res.result;
+      const displayName = u.username || u.firstname || "Người dùng";
+      const init = displayName.substring(0, 1).toUpperCase();
+      userBrief.innerHTML = `
+                <div class="user-avatar">${init}</div>
+                <div class="user-info">
+                    <b>${displayName}</b><br>
+                    <span>Thành viên</span>
+                </div>`;
+
+      const roles = (u.roles || []).map((r) => r.name || r);
+      if (adminNav && roles.includes("ADMIN")) {
+        adminNav.style.display = "block";
+      }
     } else {
-        console.error("Failed to load user info:", res.message);
+      console.error("[Edit-Build] Auth failed:", res.code);
+      if (res.code !== 1007) {
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+      }
     }
+  } catch (e) {
+    console.error("[Edit-Build] User loading error", e);
+  }
 }
 
 async function apiCall(endpoint, method = "GET", body = null, retryCount = 0) {
-    const token = localStorage.getItem("token");
-    const headers = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    try {
-        const r = await fetch(`${API_BASE_URL}${endpoint}`, { method, headers, body: body ? JSON.stringify(body) : null });
-        const d = await r.json();
-        if (d.code === 1007 && retryCount === 0) {
-            await refreshToken();
-            return apiCall(endpoint, method, body, retryCount + 1);
-        }
-        return d;
-    } catch (e) { return { code: 9999 }; }
+  const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : null,
+    });
+
+    const data = await response.json();
+
+    if (data.code === 1007 && retryCount === 0) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = refreshToken().finally(() => {
+          isRefreshing = false;
+          refreshPromise = null;
+        });
+      }
+      try {
+        await refreshPromise;
+        return apiCall(endpoint, method, body, retryCount + 1);
+      } catch (err) {
+        return data;
+      }
+    }
+
+    return data;
+  } catch (e) {
+    console.error("[Edit-Build] apiCall Error:", e);
+    return { code: 9999, message: "Lỗi kết nối máy chủ" };
+  }
 }
 
 async function refreshToken() {
-    const t = localStorage.getItem("token");
-    const r = await fetch(`${API_BASE_URL}/auth/refresh`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: t }) });
-    const d = await r.json();
-    if(d.code === 1000) localStorage.setItem("token", d.result.token);
-    else window.location.href="login.html";
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("No token to refresh");
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    const data = await response.json();
+    if (data.code === 1000 && data.result.token) {
+      localStorage.setItem("token", data.result.token);
+      return data.result.token;
+    } else {
+      throw new Error("Refresh failed");
+    }
+  } catch (error) {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+    throw error;
+  }
 }
 
 function triggerToast(msg, type = "success") {
-    if (window.showToast) window.showToast(msg, type); else alert(msg);
+  if (window.showToast) window.showToast(msg, type);
+  else alert(msg);
 }
