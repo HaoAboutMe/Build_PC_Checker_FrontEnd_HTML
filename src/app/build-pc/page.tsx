@@ -7,6 +7,9 @@ import { useBuildStore } from "@/store/useBuildStore";
 import ComponentPicker from "@/components/pc-builder/ComponentPicker";
 import { useCompatibility } from "@/hooks/useCompatibility";
 
+import { useBottleneck } from "@/hooks/useBottleneck";
+import { useAuthStore } from "@/store/authStore";
+
 const componentsConfig = [
   { id: "cpu", name: "Bộ xử lý (CPU)", api: "/cpus", icon: "fas fa-microchip" },
   { id: "mainboard", name: "Bo mạch chủ (Mainboard)", api: "/mainboards", icon: "fas fa-square" },
@@ -23,11 +26,37 @@ const componentsConfig = [
 
 export default function BuildPCPage() {
   const { currentBuild, setComponent, removeComponent, resetBuild } = useBuildStore();
+  const { user } = useAuthStore();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<any>(null);
+  const [activeRes, setActiveRes] = useState<"1080p" | "2k" | "4k">("1080p");
 
   // Real-time compatibility check
   const { data: compatResult, isLoading: isChecking } = useCompatibility(currentBuild);
+
+  // Bottleneck analysis
+  const analyzeBtnk = useBottleneck();
+
+  const handleAnalyzeBottleneck = () => {
+    if (!user) {
+       alert("Vui lòng đăng nhập để sử dụng tính năng này");
+       return;
+    }
+    if (currentBuild.cpu && currentBuild.vga) {
+      analyzeBtnk.mutate({ cpuId: currentBuild.cpu.id, vgaId: currentBuild.vga.id });
+    }
+  };
+
+  const getSeverityStyle = (severity: string) => {
+    switch (severity) {
+      case "NONE": return { color: "#10b981" };
+      case "LOW": return { color: "#63b3ed" };
+      case "MEDIUM": return { color: "#f6ad55" };
+      case "HIGH": return { color: "#f56565" };
+      default: return {};
+    }
+  };
+// ... rest of the helper functions
 
   const openPicker = (comp: any) => {
     setActiveCategory(comp);
@@ -172,6 +201,91 @@ export default function BuildPCPage() {
                 <div className={styles.psuValue}>
                   {compatResult?.recommendedPsuWattage ? `${compatResult.recommendedPsuWattage}W` : "0W"}
                 </div>
+              </div>
+            </div>
+
+            {/* Bottleneck Analysis */}
+            <div className={`${styles.analysisCard} ${styles.bottleneckCard}`}>
+              <div className={styles.cardHeaderSmall}>
+                <h3><i className="fas fa-tachometer-alt"></i> Phân tích Bottleneck</h3>
+                <button 
+                  className={styles.btnMini} 
+                  disabled={!currentBuild.cpu || !currentBuild.vga || analyzeBtnk.isPending}
+                  onClick={handleAnalyzeBottleneck}
+                >
+                  {analyzeBtnk.isPending ? <i className="fas fa-circle-notch fa-spin"></i> : "Phân tích"}
+                </button>
+              </div>
+              <div className={styles.bottleneckBody}>
+                {analyzeBtnk.data ? (
+                  <div className={styles.bottleneckResults}>
+                    <div className={styles.resGrid}>
+                      <div 
+                        className={`${styles.resItem} ${activeRes === "1080p" ? styles.active : ""}`}
+                        onMouseEnter={() => setActiveRes("1080p")}
+                        onClick={() => setActiveRes("1080p")}
+                      >
+                        <span>1080p</span>
+                        <strong style={getSeverityStyle(analyzeBtnk.data["1080p"].severity)}>
+                          {analyzeBtnk.data["1080p"].severity === "NONE" ? "Tốt" : analyzeBtnk.data["1080p"].severity}
+                        </strong>
+                      </div>
+                      <div 
+                        className={`${styles.resItem} ${activeRes === "2k" ? styles.active : ""}`}
+                        onMouseEnter={() => setActiveRes("2k")}
+                        onClick={() => setActiveRes("2k")}
+                      >
+                        <span>2K</span>
+                        <strong style={getSeverityStyle(analyzeBtnk.data["2k"].severity)}>
+                          {analyzeBtnk.data["2k"].severity === "NONE" ? "Tốt" : analyzeBtnk.data["2k"].severity}
+                        </strong>
+                      </div>
+                      <div 
+                        className={`${styles.resItem} ${activeRes === "4k" ? styles.active : ""}`}
+                        onMouseEnter={() => setActiveRes("4k")}
+                        onClick={() => setActiveRes("4k")}
+                      >
+                        <span>4K</span>
+                        <strong style={getSeverityStyle(analyzeBtnk.data["4k"].severity)}>
+                          {analyzeBtnk.data["4k"].severity === "NONE" ? "Tốt" : analyzeBtnk.data["4k"].severity}
+                        </strong>
+                      </div>
+                    </div>
+                    {analyzeBtnk.data[activeRes].message && (
+                      <div className={styles.bottleneckMsg}>
+                        <p>{analyzeBtnk.data[activeRes].message}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : currentBuild.cpu && currentBuild.vga ? (
+                  <div className={styles.emptyPlaceholder}>
+                    Nhấn nút "Phân tích" để kiểm tra tính cân bằng của hệ thống
+                  </div>
+                ) : (
+                  <div className={styles.emptyPlaceholder}>
+                    Cần ít nhất CPU và VGA để thực hiện phân tích
+                  </div>
+                )}
+              </div>
+            </div>
+
+
+            {/* Game Analysis */}
+            <div className={`${styles.analysisCard} ${styles.gameCard}`}>
+              <div className={styles.cardHeaderSmall}>
+                <h3><i className="fas fa-gamepad"></i> Phân tích hiệu năng Game</h3>
+                <button className={styles.btnMini}>
+                  <i className="fas fa-plus"></i> Chọn Games
+                </button>
+              </div>
+              <div className={styles.gameBody}>
+                <div className={styles.emptyGamesPlan}>
+                  Chưa có game nào được chọn
+                </div>
+              </div>
+              <div className={styles.gameActions} style={{ display: 'none' }}>
+                <button className={styles.btnActionSecondary}>Kiểm tra CPU/VGA</button>
+                <button className={styles.btnActionSecondary}>Dự toán FPS</button>
               </div>
             </div>
 
