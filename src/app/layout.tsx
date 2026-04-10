@@ -4,6 +4,8 @@ import "./globals.css";
 import AuthProvider from "@/components/providers/AuthProvider";
 import { Toaster } from "react-hot-toast";
 
+import Providers from "@/components/Providers";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -30,10 +32,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <div className="bg-blur-1"></div>
         <div className="bg-blur-2"></div>
-        <AuthProvider>
-          <Toaster position="top-right" reverseOrder={false} />
-          {children}
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>
+            <Toaster position="top-right" reverseOrder={false} />
+            {children}
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );
