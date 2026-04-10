@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ người dùng - Build PC Support</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/toast.css">
+</head>
+<body>
+    <div class="profile-page">
+        <div class="bg-blur-1"></div>
+        <div class="bg-blur-2"></div>
+
+        <!-- Header -->
+        <header class="main-header">
+            <div class="container header-content">
+                <div class="logo">
+                    <a href="home.html" style="text-decoration: none; color: inherit;">
+                        <h1 class="logo-text">Build PC Support</h1>
+                    </a>
+                </div>
+                <nav class="breadcrumb">
+                    <a href="home.html">Trang chủ</a>
+                    <span>/</span>
+                    <span class="current">Hồ sơ cá nhân</span>
+                </nav>
+            </div>
+        </header>
+
+        <main class="container main-container">
+            <div class="profile-layout">
+                <!-- Sidebar -->
+                <aside class="profile-sidebar">
+                    <div class="profile-card mini-info">
+                        <div class="profile-avatar" id="profile-initials">--</div>
+                        <h2 id="sidebar-username">Loading...</h2>
+                        <p id="sidebar-email">...</p>
+                    </div>
+                    
+                    <nav class="side-nav">
+                        <button class="nav-btn active" data-target="section-info">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            Thông tin chung
+                        </button>
+                        <button class="nav-btn" data-target="section-edit">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            Cập nhật thông tin
+                        </button>
+                        <button class="nav-btn" data-target="section-password">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            Đổi mật khẩu
+                        </button>
+                        <a href="my-builds.html" class="nav-btn" style="text-decoration: none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                            Cấu hình đã lưu
+                        </a>
+                    </nav>
+                </aside>
+
+                <!-- Content Area -->
+                <div class="profile-content">
+                    <!-- General Info -->
+                    <section id="section-info" class="content-section active">
+                        <div class="section-card">
+                            <h3 class="card-title">Hồ sơ của bạn</h3>
+                            <div class="info-grid">
+                                <div class="info-group">
+                                    <label>Tên đăng nhập</label>
+                                    <p id="info-username">...</p>
+                                </div>
+                                <div class="info-group">
+                                    <label>Email</label>
+                                    <p id="info-email">...</p>
+                                </div>
+                                <div class="info-group">
+                                    <label>Họ</label>
+                                    <p id="info-firstname">...</p>
+                                </div>
+                                <div class="info-group">
+                                    <label>Tên</label>
+                                    <p id="info-lastname">...</p>
+                                </div>
+                                <div class="info-group">
+                                    <label>Ngày sinh</label>
+                                    <p id="info-dob">...</p>
+                                </div>
+                                <div class="info-group">
+                                    <label>Vai trò</label>
+                                    <p id="info-roles">...</p>
+                                </div>
+                            </div>
+
+                            <!-- Admin Management Entry (Visible only to ADMIN) -->
+                            <div id="admin-entry-section" class="admin-entry-card" style="display: none;">
+                                <div class="admin-entry-content">
+                                    <div class="admin-entry-text">
+                                        <h4>Bảng điều khiển quản trị</h4>
+                                        <p>Bạn có quyền quản lý toàn bộ hệ thống linh kiện và người dùng.</p>
+                                    </div>
+                                    <a href="admin_community.html" class="admin-action-btn">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                                        Truy cập Admin Panel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Edit Info -->
+                    <section id="section-edit" class="content-section">
+                        <div class="section-card">
+                            <h3 class="card-title">Chỉnh sửa thông tin</h3>
+                            <form id="edit-profile-form" class="profile-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="edit-username">Tên đăng nhập</label>
+                                        <input type="text" id="edit-username" placeholder="Nhập tên đăng nhập">
+                                    </div>
+                                    <div class="form-group"></div> <!-- Spacer -->
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="edit-firstname">Họ</label>
+                                        <input type="text" id="edit-firstname" placeholder="Nhập họ">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="edit-lastname">Tên</label>
+                                        <input type="text" id="edit-lastname" placeholder="Nhập tên">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="edit-dob">Ngày sinh</label>
+                                        <input type="date" id="edit-dob">
+                                    </div>
+                                    <div class="form-group"></div> <!-- Empty space to keep it half width -->
+                                </div>
+                                <button type="submit" class="save-btn" id="save-info-btn">Lưu thay đổi</button>
+                            </form>
+                        </div>
+                    </section>
+
+                    <!-- Change Password -->
+                    <section id="section-password" class="content-section">
+                        <div class="section-card">
+                            <h3 class="card-title">Đổi mật khẩu</h3>
+                            <form id="change-password-form" class="profile-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="old-password">Mật khẩu hiện tại</label>
+                                        <input type="password" id="old-password" placeholder="••••••••" required>
+                                    </div>
+                                    <div class="form-group"></div> <!-- Empty space -->
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="new-password">Mật khẩu mới</label>
+                                        <input type="password" id="new-password" placeholder="••••••••" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="confirm-password">Xác nhận mật khẩu mới</label>
+                                        <input type="password" id="confirm-password" placeholder="••••••••" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="save-btn" id="save-password-btn">Cập nhật mật khẩu</button>
+                            </form>
+                        </div>
+                    </section>
+
+                    <!-- Admin Panel -->
+                    <section id="section-admin" class="content-section">
+                        <div class="section-card dashboard-card">
+                            <div class="dashboard-header">
+                                <h3 class="card-title">Quản trị hệ thống</h3>
+                                <div class="admin-stats">
+                                    <div class="stat-pill">ADMIN</div>
+                                </div>
+                            </div>
+                            
+                            <div class="admin-grid">
+                                <a href="admin_community.html?entity=cpu" class="admin-module">
+                                    <div class="module-icon components">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="9" y2="15"/><line x1="15" y1="9" x2="15" y2="15"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+                                    </div>
+                                    <div class="module-info">
+                                        <h4>Linh kiện PC</h4>
+                                        <p>Quản lý CPU, VGA, RAM...</p>
+                                    </div>
+                                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </a>
+
+                                <a href="admin_community.html?entity=user" class="admin-module">
+                                    <div class="module-icon users">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                    </div>
+                                    <div class="module-info">
+                                        <h4>Người dùng</h4>
+                                        <p>Quản lý tài khoản, vai trò</p>
+                                    </div>
+                                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </a>
+
+                                <a href="#" class="admin-module">
+                                    <div class="module-icon analytics">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                                    </div>
+                                    <div class="module-info">
+                                        <h4>Thống kê hệ thống</h4>
+                                        <p>Xem báo cáo & hiệu năng</p>
+                                    </div>
+                                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-container">
+                <p>© 2026 Build PC Support. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Script -->
+    <script src="js/toast.js"></script>
+    <script src="js/profile.js"></script>
+</body>
+</html>

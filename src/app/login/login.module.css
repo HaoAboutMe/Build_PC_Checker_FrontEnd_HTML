@@ -1,0 +1,256 @@
+.registerPage {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  position: relative;
+}
+
+.authCard {
+  display: flex;
+  width: 1000px;
+  max-width: 100%;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  z-index: 5;
+}
+
+/* Left Panel */
+.leftPanel {
+  flex: 5;
+  background-color: #f3f4f5;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.leftPanel h2 {
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.2;
+  margin-bottom: 24px;
+  letter-spacing: -0.01em;
+  position: relative;
+  z-index: 2;
+}
+
+.leftPanel p {
+  color: #414754;
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 320px;
+  position: relative;
+  z-index: 2;
+}
+
+.userStats {
+  position: relative;
+  z-index: 2;
+}
+
+.avatarGroup {
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: -10px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.statsText {
+  font-size: 12px;
+  color: #414754;
+}
+
+/* Right Panel */
+.rightPanel {
+  flex: 7;
+  padding: 56px;
+  position: relative;
+}
+
+.authNav {
+  display: flex;
+  gap: 32px;
+  border-bottom: 1px solid rgba(193, 198, 215, 0.2);
+  margin-bottom: 40px;
+}
+
+.navLink {
+  padding-bottom: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #414754;
+  text-decoration: none;
+}
+
+.navLinkActive {
+  color: #0059bb;
+  font-weight: 600;
+  border-bottom: 2px solid #0059bb;
+}
+
+.formHeader {
+  margin-bottom: 40px;
+}
+
+.formHeader h1 {
+  font-weight: 700;
+  font-size: 24px;
+  margin: 0 0 8px 0;
+}
+
+.formHeader p {
+  color: #414754;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Form Styles */
+.registerForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formGroup label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0059bb;
+  letter-spacing: 0.2px;
+}
+
+.inputContainer {
+  position: relative;
+}
+
+.inputContainer input {
+  width: 100%;
+  padding: 13px 16px 14px 40px;
+  background: rgba(225, 227, 228, 0.4);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #191c1d;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.inputContainer input:focus {
+  background: rgba(225, 227, 228, 0.6);
+  border-color: #0059bb;
+}
+
+.inputContainer i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #414754;
+  opacity: 0.6;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #414754;
+  opacity: 0.5;
+}
+
+.registerBtn {
+  margin-top: 10px;
+  padding: 16px;
+  background: linear-gradient(135deg, #0059bb 0%, #0070ea 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.2s;
+}
+
+.registerBtn:hover {
+  opacity: 0.9;
+}
+
+.registerBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.authSwitch {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 12px;
+  color: #414754;
+}
+
+.authSwitch a {
+  color: #0059bb;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.errorMessage {
+  color: #dc3545;
+  font-size: 11px;
+  margin-top: 4px;
+  min-height: 14px;
+}
+
+@media (max-width: 1024px) {
+  .authCard {
+    width: 100%;
+    flex-direction: column;
+  }
+  .leftPanel {
+    display: none;
+  }
+}

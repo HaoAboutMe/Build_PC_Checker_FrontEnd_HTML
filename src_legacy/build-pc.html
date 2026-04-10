@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xây Dựng Cấu Hình PC - BuildPC Checker</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/toast.css">
+    <link rel="stylesheet" href="css/build-pc.css">
+    <style>
+        /* Custom Confirm Modal styling */
+        .confirm-modal-content {
+            text-align: center;
+            padding: 24px;
+        }
+        .confirm-icon {
+            font-size: 48px;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+        .confirm-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .flex-1 { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fas fa-microchip"></i>
+                <span>BuildPC<span>Checker</span></span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="home.html"><i class="fas fa-home"></i> Trang chủ</a>
+                <a href="#" class="active"><i class="fas fa-tools"></i> Xây dựng PC</a>
+                <a href="my-builds.html"><i class="fas fa-save"></i> Cấu hình đã lưu</a>
+                <a href="profile.html"><i class="fas fa-user"></i> Hồ sơ</a>
+                <div class="nav-divider"></div>
+                <div id="admin-nav-item" style="display: none;">
+                    <a href="admin_community.html"><i class="fas fa-user-shield"></i> Quản trị</a>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-brief" id="user-brief">
+                    <!-- Loaded via JS -->
+                </div>
+                <button class="logout-btn" id="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-title">
+                    <h1>Xây Dựng Cấu Hình PC</h1>
+                    <p>Chọn linh kiện và kiểm tra độ tương thích thời gian thực</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-reset" id="reset-build-btn">
+                        <i class="fas fa-redo-alt"></i> Làm mới
+                    </button>
+                    <button class="btn-save" id="save-build-btn" disabled>
+                        <i class="fas fa-save"></i> Lưu cấu hình
+                    </button>
+                </div>
+            </header>
+
+            <div class="build-grid">
+                <!-- Left: Component Selection -->
+                <section class="components-section">
+                    <div class="section-card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-list-ul"></i> Danh sách linh kiện</h2>
+                            <span class="badge" id="parts-count">0/9 linh kiện</span>
+                        </div>
+                        <div class="components-list" id="build-components-list">
+                            <!-- Slots generated via JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Right: Analysis & Summary -->
+                <aside class="analysis-section">
+                    <!-- Compatibility Status -->
+                    <div class="analysis-card status-card neutral" id="compat-status">
+                        <div class="status-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3 id="compat-status-title">Bắt đầu lựa chọn</h3>
+                            <p id="compat-status-desc">Hãy chọn linh kiện để bắt đầu kiểm tra tương thích.</p>
+                        </div>
+                    </div>
+
+                    <!-- Power Recommendation -->
+                    <div class="analysis-card psu-card">
+                        <div class="psu-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="psu-content">
+                            <span class="label">Nguồn khuyến nghị:</span>
+                            <span class="value" id="psu-recommend-value">0W</span>
+                        </div>
+                    </div>
+
+                    <!-- Issues List (Optimization Warnings) -->
+                    <div class="issues-container" style="margin-top: -10px;">
+                        <div class="issue-box error" id="error-group" style="display: none;">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Lỗi nghiêm trọng</h4>
+                            <ul id="error-list"></ul>
+                        </div>
+                        <div class="issue-box warning" id="warning-group" style="display: none;">
+                            <h4><i class="fas fa-exclamation-circle"></i> Cảnh báo tối ưu</h4>
+                            <ul id="warning-list"></ul>
+                        </div>
+                    </div>
+
+                    <!-- Bottleneck Analysis -->
+                    <div class="analysis-card bottleneck-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-tachometer-alt"></i> Phân tích Bottleneck</h3>
+                            <button class="btn-mini" id="check-bottleneck-btn">
+                                <i class="fas fa-search"></i> Phân tích
+                            </button>
+                        </div>
+                        <div class="bottleneck-body" id="bottleneck-results-content" style="display: none;">
+                            <div class="res-grid">
+                                <div class="res-item">
+                                    <span>1080p</span>
+                                    <strong id="bottleneck-1080p">-</strong>
+                                </div>
+                                <div class="res-item">
+                                    <span>2K</span>
+                                    <strong id="bottleneck-2k">-</strong>
+                                </div>
+                                <div class="res-item">
+                                    <span>4K</span>
+                                    <strong id="bottleneck-4k">-</strong>
+                                </div>
+                            </div>
+                            <div class="bottleneck-msg" id="bottleneck-message"></div>
+                        </div>
+                        <div class="empty-placeholder" id="bottleneck-empty">
+                            Cần CPU và VGA để thực hiện phân tích
+                        </div>
+                    </div>
+
+                    <!-- Game Check -->
+                    <div class="analysis-card game-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-gamepad"></i> Tương thích Game</h3>
+                        </div>
+                        <div class="game-selector">
+                            <div class="selected-games-container" id="selected-games-list">
+                                <!-- Multi-games will be listed here -->
+                                <div class="empty-games-placeholder">Chưa có game nào được chọn</div>
+                            </div>
+                            <button class="btn-secondary w-100 mb-3" id="view-game-list-btn">
+                                <i class="fas fa-plus"></i> Chọn Games
+                            </button>
+                        </div>
+
+                        <!-- Resolution Selector for FPS -->
+                        <div class="resolution-selector-sidebar" id="resolution-selector-wrap" style="display: none;">
+                            <label class="mini-title">Độ phân giải dự toán</label>
+                            <div class="res-options-flex">
+                                <label class="res-radio">
+                                    <input type="radio" name="res-choice" value="1080p" checked>
+                                    <span>1080p</span>
+                                </label>
+                                <label class="res-radio">
+                                    <input type="radio" name="res-choice" value="2k">
+                                    <span>2K</span>
+                                </label>
+                                <label class="res-radio">
+                                    <input type="radio" name="res-choice" value="4k">
+                                    <span>4K</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="game-actions" id="game-actions" style="display: none; flex-direction: column; gap: 4px; margin-top: 16px;">
+                            <button class="btn-primary w-100" id="check-multi-compat-btn">
+                                <i class="fas fa-check-double"></i> Kiểm tra cấu hình đề nghị
+                            </button>
+                            <button class="btn-primary w-100" id="check-multi-fps-btn" style="background:#8b5cf6; color:white; border:none;">
+                                <i class="fas fa-chart-line"></i> Ước tính FPS
+                            </button>
+                        </div>
+                        <button class="btn-primary w-100" id="check-all-games-btn" style="margin-top: 4px;">
+                            <i class="fas fa-rocket"></i> Kiểm tra tất cả Game
+                        </button>
+                    </div>
+
+                    <!-- Game Check -->
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Component Picker -->
+    <div class="modal-overlay" id="picker-modal">
+        <div class="modal-content lg">
+            <div class="modal-header">
+                <h3 id="picker-title">Chọn linh kiện</h3>
+                <button class="close-modal" id="close-picker-btn"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div id="picker-list-view">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="picker-search" placeholder="Tìm kiếm linh kiện...">
+                </div>
+                <div class="picker-filters" id="picker-filters">
+                    <!-- Dynamic filters injected here -->
+                </div>
+                <div class="picker-items" id="picker-items">
+                    <!-- JS Injected -->
+                </div>
+                <div class="pagination">
+                    <button class="btn-circle" id="page-prev-btn"><i class="fas fa-chevron-left"></i></button>
+                    <span id="page-info">Trang 1 / 1</span>
+                    <button class="btn-circle" id="page-next-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+
+            <div id="picker-detail-view" style="display: none;">
+                <div class="detail-header">
+                    <button class="btn-back" id="detail-back-btn"><i class="fas fa-arrow-left"></i> Quay lại</button>
+                </div>
+                <div class="detail-body" id="detail-content">
+                    <!-- JS Injected -->
+                </div>
+                <div class="detail-footer">
+                    <button class="btn-primary" id="detail-select-btn">Chọn linh kiện này</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modern Save Build Modal -->
+    <div class="modal-overlay" id="save-build-modal">
+        <div class="modal-content sm premium-modal">
+            <div class="modal-header">
+                <div class="header-with-icon">
+                    <div class="header-icon-circle">
+                        <i class="fas fa-save"></i>
+                    </div>
+                    <div>
+                        <h3>Lưu cấu hình PC</h3>
+                        <p class="text-muted" style="font-size: 11px; margin: 0;">Lưu lại để xem lại sau hoặc chia sẻ với mọi người</p>
+                    </div>
+                </div>
+                <button class="close-modal" id="close-save-build-btn">&times;</button>
+            </div>
+            
+            <div class="modal-body-premium">
+                <!-- Build mini-summary banner -->
+                <div class="build-preview-banner">
+                    <div id="save-modal-build-summary" style="font-size: 11px; font-weight: 500; color: var(--secondary);">
+                        <i class="fas fa-info-circle"></i> Đang chuẩn bị lưu <span id="save-modal-parts-count">0</span> linh kiện...
+                    </div>
+                </div>
+
+                <div class="premium-form-group">
+                    <label class="form-label">Tên cấu hình <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-tag"></i>
+                        <input type="text" id="build-name" placeholder="Ví dụ: PC Gaming 2026 ...">
+                    </div>
+                    <div class="text-danger" id="build-name-error" style="display:none; font-size:11px; margin-top:4px;">Vui lòng nhập tên cấu hình để tiếp tục</div>
+                </div>
+
+                <div class="premium-form-group">
+                    <label class="form-label">Mô tả chi tiết</label>
+                    <div class="input-with-icon align-top">
+                        <i class="fas fa-align-left"></i>
+                        <textarea id="build-description" rows="3" placeholder="Ghi chú thêm về mục đích sử dụng, lưu ý..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-action-footer">
+                    <button class="btn-secondary flex-1" onclick="closeSaveModal()">Hủy bỏ</button>
+                    <button class="btn-primary flex-2" id="confirm-save-build-btn">
+                        <i class="fas fa-cloud-upload-alt"></i> Lưu ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Picker Modal -->
+    <div class="modal-overlay" id="game-picker-modal">
+        <div class="modal-content lg">
+            <div class="modal-header">
+                <h3>Thư viện Game</h3>
+                <button class="close-modal" id="close-game-picker-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="game-picker-search" placeholder="Tìm tên game...">
+            </div>
+            <div class="game-grid" id="game-picker-items">
+                <!-- JS Injected -->
+            </div>
+            <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <div class="sel-count" id="game-sel-count">Đã chọn 0 game</div>
+                <button class="btn-primary" id="confirm-game-selection-btn">Xác nhận lựa chọn</button>
+            </div>
+            <div class="pagination">
+                <button class="btn-circle" id="game-page-prev"><i class="fas fa-chevron-left"></i></button>
+                <span id="game-page-info">Trang 1 / 1</span>
+                <button class="btn-circle" id="game-page-next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FPS Modal -->
+    <div class="modal-overlay" id="fps-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Ước tính hiệu năng FPS</h3>
+                <button class="close-modal" id="close-fps-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="resolution-tabs">
+                    <button class="res-tab" data-res="1080p">1080p</button>
+                    <button class="res-tab" data-res="2k">2K</button>
+                    <button class="res-tab" data-res="4k">4K</button>
+                </div>
+                <div id="fps-loading" class="fps-loader" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Đang tính toán...</p>
+                </div>
+                <div id="fps-result-container" style="display: none;">
+                    <div class="fps-grid" id="fps-estimates">
+                        <!-- JS Injected -->
+                    </div>
+                    <div class="advice-box" id="fps-advice"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Game Results -->
+    <div class="modal-overlay" id="game-compat-list-modal">
+        <div class="modal-content lg">
+            <div class="modal-header">
+                <h3>Kết quả kiểm tra toàn bộ Game</h3>
+                <button class="close-modal" id="close-game-compat-list-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="build-summary-brief" id="pc-spec-summary"></div>
+                <div class="results-list" id="game-compat-results"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error List Modal (Compatibility) -->
+    <div class="modal-overlay" id="compat-error-modal" style="z-index: 2000;">
+        <div class="modal-content sm">
+            <div class="modal-header">
+                <h3 class="text-danger"><i class="fas fa-exclamation-triangle"></i> Xung đột linh kiện</h3>
+                <button class="close-modal" id="close-compat-error-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Cấu hình hiện tại có các vấn đề nghiêm trọng. Vui lòng sửa lỗi trước khi lưu:</p>
+                <ul class="error-list-modal" id="compat-error-list"></ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary w-100" id="confirm-compat-error-btn">Đã hiểu</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    
+    <script src="js/toast.js"></script>
+    <script src="js/build-pc.js"></script>
+    <!-- Custom Confirm Modal -->
+    <div class="modal-overlay" id="custom-confirm-modal" style="z-index: 3000;">
+        <div class="modal-content sm">
+            <div class="confirm-modal-content">
+                <div class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3 id="confirm-title" style="margin-bottom: 8px;">Xác nhận</h3>
+                <p id="confirm-message" class="text-muted" style="font-size: 14px;"></p>
+                <div class="confirm-actions">
+                    <button class="btn-secondary flex-1" id="confirm-cancel-btn">Bỏ qua</button>
+                    <button class="btn-primary flex-1" id="confirm-ok-btn">Đồng ý</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Custom Confirm Modal -->
+    <div class="modal-overlay" id="custom-confirm-modal" style="z-index: 3000;">
+        <div class="modal-content sm">
+            <div class="confirm-modal-content">
+                <div class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3 id="confirm-title" style="margin-bottom: 8px;">Xác nhận</h3>
+                <p id="confirm-message" class="text-muted" style="font-size: 14px;"></p>
+                <div class="confirm-actions">
+                    <button class="btn-secondary flex-1" id="confirm-cancel-btn">Bỏ qua</button>
+                    <button class="btn-primary flex-1" id="confirm-ok-btn">Đồng ý</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

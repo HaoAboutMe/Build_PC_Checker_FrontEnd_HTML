@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - BuildPC Checker</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/register.css">
+    <link rel="stylesheet" href="css/toast.css">
+</head>
+<body>
+    <div class="register-page">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-container">
+                <div class="logo">
+                    <a href="home.html" style="text-decoration: none; color: inherit;">
+                        <h1 class="logo-text">Build PC Support</h1>
+                    </a>
+                </div>
+                <div class="search-icon">
+                    <img src="https://www.figma.com/api/mcp/asset/2897e8c1-48e3-4680-9293-d7c9372b1437" alt="Search" width="20">
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="bg-blur-1"></div>
+            <div class="bg-blur-2"></div>
+            
+            <div class="auth-card">
+                <!-- Left Panel -->
+                <div class="left-panel">
+                    <img src="https://www.figma.com/api/mcp/asset/e1f57ef5-3388-4488-be27-4cbdf7088512" alt="Background" class="left-panel-bg-svg">
+                    <div class="left-content">
+                        <h2>Hỗ trợ xây dựng cấu hình máy tính dành cho mọi người.</h2>
+                        <p>Bắt đầu hành trình của bạn với Build PC Support.<br>Giải pháp tối ưu cho dàn máy tính mơ ước của bạn.</p>
+                    </div>
+                    <div class="user-stats">
+                        <div class="avatar-group">
+                            <div class="avatar" style="background-color: #e1e3e4;">
+                                <img src="https://www.figma.com/api/mcp/asset/4d9107a1-40aa-4fa6-b98b-50dd32d9e1f3" alt="">
+                            </div>
+                            <div class="avatar" style="background-color: #d8e2ff;">
+                                <img src="https://www.figma.com/api/mcp/asset/a2fa7c69-9545-4ef1-b2e7-4cb14633af83" alt="">
+                            </div>
+                            <div class="avatar" style="background-color: #d8e2ff;">
+                                <img src="https://www.figma.com/api/mcp/asset/502c8e84-e5fd-4081-bf41-198c437ec8bf" alt="">
+                            </div>
+                        </div>
+                        <p class="stats-text">Gia nhập cùng 50,000+ chuyên gia toàn cầu.</p>
+                    </div>
+                </div>
+
+                <!-- Right Panel -->
+                <div class="right-panel">
+                    <nav class="auth-nav">
+                        <a href="login.html" class="nav-link">Đăng nhập</a>
+                        <a href="#" class="nav-link active">Đăng ký</a>
+                    </nav>
+
+                    <div class="form-header">
+                        <h1>Đăng ký tài khoản mới</h1>
+                        <p>Vui lòng điền thông tin để bắt đầu sử dụng dịch vụ.</p>
+                    </div>
+
+                    <form id="register-form" class="register-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="register-firstname">Họ</label>
+                                <div class="input-container">
+                                    <img src="https://www.figma.com/api/mcp/asset/18bf38be-0c71-4ac0-aadc-06bc7b1da4a8" alt="" class="icon">
+                                    <input type="text" id="register-firstname" placeholder="Nguyễn" required>
+                                </div>
+                                <span class="error-message" id="register-firstname-error"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-lastname">Tên</label>
+                                <div class="input-container">
+                                    <img src="https://www.figma.com/api/mcp/asset/18bf38be-0c71-4ac0-aadc-06bc7b1da4a8" alt="" class="icon">
+                                    <input type="text" id="register-lastname" placeholder="An" required>
+                                </div>
+                                <span class="error-message" id="register-lastname-error"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="register-username">Tên người dùng</label>
+                            <div class="input-container">
+                                <img src="https://www.figma.com/api/mcp/asset/4b7b8f7f-061e-49e3-9d95-f9ff9f96f219" alt="" class="icon">
+                                <input type="text" id="register-username" placeholder="an.nguyen88" required>
+                            </div>
+                            <span class="error-message" id="register-username-error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="register-email">Email</label>
+                            <div class="input-container">
+                                <img src="https://www.figma.com/api/mcp/asset/9ad44219-57b9-4170-99a1-5a447848737f" alt="" class="icon">
+                                <input type="email" id="register-email" placeholder="example@stitch.com" required>
+                            </div>
+                            <span class="error-message" id="register-email-error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="register-password">Mật khẩu</label>
+                            <div class="input-container">
+                                <img src="https://www.figma.com/api/mcp/asset/01dd80b6-ab75-46d1-ad83-b4216d3dcf6e" alt="" class="icon">
+                                <input type="password" id="register-password" placeholder="••••••••" required>
+                                <button type="button" class="password-toggle">
+                                    <img src="https://www.figma.com/api/mcp/asset/b039c6f0-31e1-4f8c-88a6-4cff7a43a4b1" alt="Show password" width="16">
+                                </button>
+                            </div>
+                            <span class="error-message" id="register-password-error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="register-dob">Ngày sinh</label>
+                            <div class="input-container">
+                                <img src="https://www.figma.com/api/mcp/asset/21c10f9c-2a36-4ec5-8e46-d849a42882c3" alt="" class="icon">
+                                <input type="date" id="register-dob" required>
+                            </div>
+                            <span class="error-message" id="register-dob-error"></span>
+                        </div>
+
+                        <button type="submit" id="register-btn" class="register-btn">Đăng ký</button>
+                    </form>
+
+                    <div class="auth-switch">
+                        Đã có tài khoản? <a href="login.html">Đăng nhập</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-container">
+                <p>© 2026 Build PC Support. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="#">Privacy</a>
+                    <a href="#">Terms</a>
+                    <a href="#">Security</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Script -->
+    <script src="js/toast.js"></script>
+    <script src="js/register.js"></script>
+</body>
+</html>
