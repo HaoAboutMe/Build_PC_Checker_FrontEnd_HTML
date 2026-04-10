@@ -7,10 +7,12 @@ import { useAuthStore } from "@/store/authStore";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { user, isAuthenticated, fetchMe, clearAuth, isLoading } = useAuthStore();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setIsMounted(true);
     // If we think we're authenticated but have no user data, fetch it
     if (isAuthenticated && !user && !isLoading) {
       fetchMe();
@@ -31,7 +33,13 @@ const Header = () => {
     window.location.href = "/login";
   };
 
-  const initials = user ? (user.firstname || user.username).substring(0, 2).toUpperCase() : (isAuthenticated ? ".." : "?");
+  const getInitials = () => {
+    if (!isMounted) return "?";
+    if (user) return (user.firstname || user.username).substring(0, 2).toUpperCase();
+    return isAuthenticated ? ".." : "?";
+  };
+
+  const initials = getInitials();
 
   return (
     <header className={styles.mainHeader}>

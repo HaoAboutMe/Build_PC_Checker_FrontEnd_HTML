@@ -13,24 +13,57 @@ interface ComponentDetailProps {
 
 const EXCLUDED_FIELDS = [
   "id", "imageUrl", "coverImageUrl", "name", "description", 
-  "enabled", "deleted", "code", "result", "message", "brand"
+  "enabled", "deleted", "code", "result", "message", "brand",
+  "cpuScore", "gpuScore", "score"
 ];
 
 const LABEL_MAP: Record<string, string> = {
   socketId: "Socket",
-  tdp: "Công suất (TDP)",
+  tdp: "Công suất tiêu thụ (TDP)",
   ramTypeId: "Loại RAM",
+  ramType: "Loại RAM",
   ramSlot: "Số khe RAM",
   ramMaxCapacity: "Dung lượng RAM tối đa",
   m2Slot: "Số khe M.2",
   sataSlot: "Số khe SATA",
-  vramGb: "VRAM",
+  vramGb: "Dung lượng VRAM",
   lengthMm: "Chiều dài",
   wattage: "Công suất",
   capacity: "Dung lượng",
   maxGpuLength: "Hỗ trợ VGA tối đa",
   maxCpuCoolerHeight: "Hỗ trợ tản CPU tối đa",
-  coolerType: "Loại tản",
+  coolerType: "Loại tản nhiệt",
+  pcieVersion: "PCIe",
+  vrmMin: "VRM tối thiểu",
+  vrmPhase: "Số pha VRM",
+  cpuTdpSupport: "Hỗ trợ TDP CPU",
+  ramBusMax: "Bus RAM tối đa",
+  pcieVgaVersion: "Chuẩn PCIe VGA",
+  size: "Kích thước",
+  coreCount: "Số nhân",
+  threadCount: "Số luồng",
+  baseClock: "Xung cơ bản",
+  boostClock: "Xung Boost",
+  hasIntegratedGraphics: "Có VGA tích hợp",
+  stickCount: "Số thanh RAM",
+  capacityPerStick: "Dung lượng mỗi thanh",
+  ramBus: "Bus RAM",
+  ramCas: "Ram Cas",
+  casLatency: "Độ trễ CAS",
+  quantity: "Số lượng thanh",
+  powerConnector: "Đầu cấp nguồn",
+  radiatorSize: "Kích thước Radiator",
+  heightMm: "Chiều cao",
+  readSpeed: "Tốc độ đọc",
+  writeSpeed: "Tốc độ ghi",
+  interfaceType: "Chuẩn giao tiếp",
+  formFactor: "Kích thước",
+  efficiencyRating: "Chuẩn hiệu suất",
+  modularType: "Chuẩn Modular",
+  sizeId: "Kích thước",
+  brand: "Thương hiệu",
+  sku: "Mã sản phẩm",
+  ssdType: "Loại SSD"
 };
 
 const UNIT_MAP: Record<string, string> = {
@@ -40,14 +73,25 @@ const UNIT_MAP: Record<string, string> = {
   vramGb: "GB",
   lengthMm: "mm",
   capacity: "GB",
+  capacityPerStick: "GB",
   maxGpuLength: "mm",
   maxCpuCoolerHeight: "mm",
+  ramBus: "MHz",
+  ramBusMax: "MHz",
+  readSpeed: "MB/s",
+  writeSpeed: "MB/s",
+  heightMm: "mm",
+  cpuTdpSupport: "W",
 };
 
 export default function ComponentDetail({ item, categoryName, onSelect, onBack }: ComponentDetailProps) {
   
   const renderValue = (key: string, value: any) => {
     if (value === null || value === undefined) return "N/A";
+
+    if (key === "vrmMin" || key === "vrmPhase") {
+      return `${value} phase`;
+    }
     
     let displayValue = value;
     if (typeof value === "object") {
